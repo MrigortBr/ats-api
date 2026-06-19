@@ -5,6 +5,8 @@ import { AuthRepository } from "./auth.repository";
 import { InvalidCredentialsException } from "./exceptions/invalid.exception";
 import { UserAlreadyExistsException } from "./exceptions/userAlready.exception";
 import * as payload from "./type/payload";
+import { generatePassword, generateLogin } from "../../common/utils/generate-credentials";
+import { sendCredentialsEmail } from "../../common/mail/mail.service";
 
 @Injectable()
 export class AuthService {
@@ -43,8 +45,15 @@ export class AuthService {
         const existing = await this.authRepository.findByEmail(data.email);
         if (existing) throw new UserAlreadyExistsException();
 
+        // Se nao veio senha, gera automaticamente: NomeSobrenome + 3 digitos
+        const plainPassword = data.password && data.password.trim()
+            ? data.password
+            : generatePassword(data.name, data.surname);
+
+        const login = generateLogin(data.name, data.surname);
+
         const hashedPassword = await bcrypt.hash(
-            data.password,
+            plainPassword,
             Number(process.env.HASH_AMOUNT) || 12,
         );
 
@@ -56,6 +65,22 @@ export class AuthService {
             role: data.role,
         });
 
-        return { message: "Usuário cadastrado com sucesso" };
+        // Envia credenciais por e-mail (nao bloqueia em caso de falha)
+        if (process.env.MAIL_USER) {
+            sendCredentialsEmail({
+                to: data.email,
+                name: data.name + " " + data.surname,
+                login,
+                password: plainPassword,
+            }).catch((err) =>
+                console.warn("[mail] Falha ao enviar credenciais:", err && err.message),
+            );
+        }
+
+        return {
+            message: "Usuario cadastrado com sucesso",
+            login,
+            passwordGenerated: !(data.password && data.password.trim()),
+        };
     }
 }

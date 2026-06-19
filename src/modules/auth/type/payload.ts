@@ -9,6 +9,6 @@ export type createUser = {
     email: string;
     name: string;
     surname: string;
-    password: string;
+    password?: string;
     role: UserRole;
 };

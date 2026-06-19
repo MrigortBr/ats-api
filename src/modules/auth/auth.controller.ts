@@ -14,7 +14,7 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     @Post("/login")
-    @ApiOperation({ summary: "Login — retorna JWT" })
+    @ApiOperation({ summary: "Login - retorna JWT" })
     @ApiBody({ type: LoginDto })
     async login(@Body() body: LoginDto) {
         validatePayload(body as unknown as Record<string, unknown>, ["login", "password"], true);
@@ -25,10 +25,10 @@ export class AuthController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles("admin")
     @ApiBearerAuth("bearer")
-    @ApiOperation({ summary: "Criar usuário (apenas admin)" })
+    @ApiOperation({ summary: "Criar usuario (apenas admin)" })
     @ApiBody({ type: CreateUserDto })
     async createUser(@Body() body: CreateUserDto) {
-        validatePayload(body as unknown as Record<string, unknown>, ["email", "name", "surname", "password", "role"], true);
+        validatePayload(body as unknown as Record<string, unknown>, ["email", "name", "surname", "role"], true);
         return this.authService.createUser(body as unknown as payload.createUser);
     }
 }

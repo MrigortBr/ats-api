@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import { configDotenv } from "dotenv";
 import * as bcrypt from "bcrypt";
 import { Users } from "../../modules/auth/entities/user.entity";
+import { generatePassword, generateLogin } from "../../common/utils/generate-credentials";
 import { Uf } from "../../modules/uf/entities/uf.entity";
 import { TransportRtx } from "../../modules/transport-rtx/entities/transport-rtx.entity";
 import { TransportTrs } from "../../modules/transport-trs/entities/transport-trs.entity";
@@ -328,6 +329,34 @@ async function seed() {
         console.log("  + 3 registros criados em transport_value");
     } else {
         console.log("  - transport_value ja possui dados, pulando.");
+    }
+
+    // --- Usuarios extras ---
+    const USERS_TO_SEED: { name: string; surname: string; email: string; role: "admin" | "gestor" | "visualizador" }[] = [
+        // Adicione os usuarios aqui:
+        { name: "Joao",  surname: "Silva",    email: "joao.silva@saude.gov.br",    role: "gestor"       },
+        { name: "Maria", surname: "Oliveira", email: "maria.oliveira@saude.gov.br", role: "visualizador" },
+    ];
+
+    if (USERS_TO_SEED.length > 0) {
+        console.log("\n  Usuarios extras:");
+        for (const u of USERS_TO_SEED) {
+            const alreadyExists = await userRepo.findOne({ where: { email: u.email } });
+            if (!alreadyExists) {
+                const plain = generatePassword(u.name, u.surname);
+                const hashed = await bcrypt.hash(plain, hashAmount);
+                await userRepo.save(userRepo.create({
+                    name: u.name,
+                    surname: u.surname,
+                    email: u.email,
+                    password: hashed,
+                    role: u.role,
+                }));
+                console.log("  + " + u.name + " " + u.surname + "  |  login: " + generateLogin(u.name, u.surname) + "  |  senha: " + plain);
+            } else {
+                console.log("  - " + u.email + " ja existe, pulando.");
+            }
+        }
     }
 
     await dataSource.destroy();

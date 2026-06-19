@@ -4,7 +4,6 @@ export class UpdateUfDto {
     @ApiPropertyOptional({ example: "ESTADO" })
     agreement?: string;
 
-    @ApiPropertyOptional({ enum: ["Sim", "Não", "Em andamento"] })
+    @ApiPropertyOptional({ enum: ["Sim", "Nao", "Em andamento"] })
     cib?: string;
-
 }

@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AppController } from "./app.controller";
 import { DatabaseModule } from "./database/database.module";
 import { AuthModule } from "./modules/auth/auth.module";
 // Entity modules
@@ -16,6 +17,7 @@ import { CotaGeralModule } from "./modules/cota-geral/cota-geral.module";
 import { ConsolidadoModule } from "./modules/consolidado/consolidado.module";
 
 @Module({
+    controllers: [AppController],
     imports: [
         DatabaseModule,
         AuthModule,

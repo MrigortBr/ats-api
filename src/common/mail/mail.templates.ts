@@ -10,7 +10,7 @@ export function credentialsEmailTemplate(
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Credenciais de Acesso - ATS</title>
+  <title>Credenciais de Acesso - Acompanhamento do Transporte Sanitario</title>
 </head>
 <body style="margin:0;padding:0;background:#eef4ef;font-family:'Segoe UI',Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#eef4ef;padding:48px 16px;">
@@ -21,7 +21,7 @@ export function credentialsEmailTemplate(
       <tr>
         <td style="background:linear-gradient(135deg,#1b5e3b 0%,#2e7d52 100%);padding:44px 48px 36px;text-align:center;">
           <div style="width:60px;height:60px;background:rgba(255,255,255,0.18);border-radius:16px;display:inline-block;line-height:60px;font-size:30px;margin-bottom:18px;">&#128273;</div>
-          <p style="margin:0 0 4px;color:#fff;font-size:22px;font-weight:700;">Bem-vindo(a) ao Sistema ATS</p>
+          <p style="margin:0 0 4px;color:#fff;font-size:22px;font-weight:700;">Bem-vindo(a)</p>
           <p style="margin:0;color:rgba(255,255,255,0.75);font-size:13px;">Acompanhamento do Transporte Sanitario - DECAN/MS</p>
         </td>
       </tr>
@@ -30,7 +30,7 @@ export function credentialsEmailTemplate(
       <tr>
         <td style="padding:40px 48px 32px;">
           <p style="margin:0 0 24px;color:#2d3f35;font-size:15px;line-height:1.6;">
-            Ola, <strong style="color:#1b5e3b;">${name}</strong>! Sua conta foi criada no Sistema ATS. Use as credenciais abaixo para acessar.
+            Ola, <strong style="color:#1b5e3b;">${name}</strong>! Sua conta foi criada no Sistema de Acompanhamento do Transporte Sanitario. Use as credenciais abaixo para acessar.
           </p>
 
           <!-- Credentials box -->
@@ -54,7 +54,7 @@ export function credentialsEmailTemplate(
           <!-- CTA Button -->
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
             <tr><td align="center">
-              <a href="${process.env.SYSTEM_URL ?? "https://ats.saude.gov.br"}"
+              <a href="https://ats-rust.vercel.app/" target="_blank"
                  style="display:inline-block;background:#1b5e3b;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:10px;letter-spacing:0.3px;">
                 Acessar o Sistema ATS &rarr;
               </a>
@@ -77,7 +77,7 @@ export function credentialsEmailTemplate(
       <tr>
         <td style="background:#f4f8f5;border-top:1px solid #c8dbd0;padding:20px 48px;text-align:center;">
           <p style="margin:0;color:#8faa98;font-size:11px;">
-            &copy; ${new Date().getFullYear()} Ministerio da Saude &middot; DECAN/ATS &middot; Mensagem automatica, nao responda.
+            &copy; ${new Date().getFullYear()} Ministerio da Saude &middot; DECAN &middot; Mensagem automatica, nao responda.
           </p>
         </td>
       </tr>

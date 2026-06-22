@@ -336,7 +336,7 @@ async function seed() {
     // email e gerado automaticamente como nome.sobrenome@saude.gov.br
     const USERS_TO_SEED: { name: string; surname: string; role: "admin" | "gestor" | "visualizador" }[] = [
         { name: "Juarez", surname: "Silva", role: "admin"  },
-        { name: "Igor",   surname: "Lins",  role: "gestor" },
+        // { name: "Igor",   surname: "Lins",  role: "gestor" },
     ];
 
     if (USERS_TO_SEED.length > 0) {

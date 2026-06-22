@@ -17,4 +17,6 @@ export class UpdateEntregaDto {
     @ApiPropertyOptional() generalQuota?: UpdateGeneralQuotaDto;
     @ApiPropertyOptional() rtxObservation?: string | null;
     @ApiPropertyOptional() trsObservation?: string | null;
+    @ApiPropertyOptional() cib?: string | null;
+    @ApiPropertyOptional() agreement?: string | null;
 }

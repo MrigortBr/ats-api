@@ -2,8 +2,8 @@ import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class UpdateUfDto {
     @ApiPropertyOptional({ example: "ESTADO" })
-    agreement?: string;
+    agreement?: string | null;
 
     @ApiPropertyOptional({ enum: ["Sim", "Nao", "Em andamento"] })
-    cib?: string;
+    cib?: string | null;
 }

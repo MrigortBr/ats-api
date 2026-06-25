@@ -1,14 +1,15 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { HospitalService } from "./hospital.service";
-import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto } from "./dto/hospital.dto";
+import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
 
 @ApiTags("Hospital TOMO/RNM")
 @ApiBearerAuth("bearer")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles("admin")
 @Controller("/hospital")
 export class HospitalController {
     constructor(private readonly service: HospitalService) {}
@@ -42,32 +43,39 @@ export class HospitalController {
     // ── Criar hospital (single) ───────────────────────────────────────────────
 
     @Post()
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor")
-    @ApiOperation({ summary: "Cadastrar novo hospital via CNES (admin/gestor)" })
+    @ApiOperation({ summary: "Cadastrar novo hospital via CNES (admin)" })
     @ApiResponse({ status: 201, description: "Hospital cadastrado" })
     @ApiResponse({ status: 400, description: "CNES inválido ou já cadastrado" })
     create(@Body() dto: CreateHospitalDto) {
-        return this.service.create(dto.cnes);
+        return this.service.registerForModule(dto.cnes, dto.module, dto.tomo);
     }
 
     // ── Importação em massa ───────────────────────────────────────────────────
 
     @Post("bulk")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor")
-    @ApiOperation({ summary: "Importar múltiplos hospitais por array de CNES (admin/gestor)" })
+    @ApiOperation({ summary: "Importar múltiplos hospitais por array de CNES (admin)" })
     @ApiResponse({ status: 201, description: "Resultado da importação: created, skipped, errors" })
     bulkCreate(@Body() dto: BulkCreateHospitalDto) {
         return this.service.bulkCreate(dto.cnesList);
     }
 
+    // ── Atualizar hospital base ───────────────────────────────────────────────
+
+    @Patch(":id")
+    @ApiOperation({ summary: "Atualizar dados base do hospital (CNES, etc)" })
+    @ApiResponse({ status: 200, description: "Hospital atualizado" })
+    @ApiResponse({ status: 404, description: "Hospital não encontrado" })
+    updateHospital(
+        @Param("id") id: string,
+        @Body() dto: UpdateHospitalDto,
+    ) {
+        return this.service.updateHospital(Number(id), dto);
+    }
+
     // ── Atualizar TOMO ────────────────────────────────────────────────────────
 
     @Put(":hospitalId/tomo")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor")
-    @ApiOperation({ summary: "Atualizar dados TOMO de um hospital (admin/gestor)" })
+    @ApiOperation({ summary: "Atualizar dados TOMO de um hospital (admin)" })
     @ApiResponse({ status: 200, description: "Dados TOMO atualizados" })
     @ApiResponse({ status: 404, description: "Hospital não encontrado" })
     updateTomo(
@@ -80,9 +88,7 @@ export class HospitalController {
     // ── Atualizar RNM ─────────────────────────────────────────────────────────
 
     @Put(":hospitalId/rnm")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor")
-    @ApiOperation({ summary: "Atualizar dados RNM de um hospital (admin/gestor)" })
+    @ApiOperation({ summary: "Atualizar dados RNM de um hospital (admin)" })
     @ApiResponse({ status: 200, description: "Dados RNM atualizados" })
     @ApiResponse({ status: 404, description: "Hospital não encontrado" })
     updateRnm(
@@ -90,5 +96,16 @@ export class HospitalController {
         @Body() dto: UpdateHospitalRnmDto,
     ) {
         return this.service.updateRnm(Number(hospitalId), dto);
+    }
+
+    // ── Deletar hospital ──────────────────────────────────────────────────────
+
+    @Delete(":id")
+    @HttpCode(204)
+    @ApiOperation({ summary: "Remover hospital e todos os seus registros (admin)" })
+    @ApiResponse({ status: 204, description: "Hospital removido" })
+    @ApiResponse({ status: 404, description: "Hospital não encontrado" })
+    deleteHospital(@Param("id") id: string) {
+        return this.service.deleteHospital(Number(id));
     }
 }

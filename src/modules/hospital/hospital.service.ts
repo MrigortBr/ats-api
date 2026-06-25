@@ -1,28 +1,36 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, DataSource } from "typeorm";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
 import { Uf } from "../uf/entities/uf.entity";
-import { UpdateHospitalTomoDto, UpdateHospitalRnmDto } from "./dto/hospital.dto";
+import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto } from "./dto/hospital.dto";
 
 const DEMAS_BASE = "https://apidadosabertos.saude.gov.br/cnes";
+const IBGE_BASE  = "https://servicodados.ibge.gov.br/api/v1/localidades";
 
 interface DemasEstabelecimento {
     codigo_cnes: number;
     nome_razao_social: string;
     nome_fantasia: string | null;
     codigo_municipio: number;
-    natureza_organizacional?: { descricao: string };
-    tipo_gestao?: { descricao: string };
+    codigo_uf: number;
 }
 
-interface DemasMunicipio {
-    codigo: number;
+interface IbgeMunicipio {
+    id: number;
     nome: string;
-    uf: string;
 }
+
+// Mapa IBGE codigo_uf → sigla UF
+const UF_CODE_MAP: Record<number, string> = {
+    11: "RO", 12: "AC", 13: "AM", 14: "RR", 15: "PA", 16: "AP", 17: "TO",
+    21: "MA", 22: "PI", 23: "CE", 24: "RN", 25: "PB", 26: "PE", 27: "AL", 28: "SE", 29: "BA",
+    31: "MG", 32: "ES", 33: "RJ", 35: "SP",
+    41: "PR", 42: "SC", 43: "RS",
+    50: "MS", 51: "MT", 52: "GO", 53: "DF",
+};
 
 function toTitleCase(str: string): string {
     const SKIP = ["de", "da", "do", "das", "dos", "e", "a", "o", "em", "no", "na"];
@@ -50,66 +58,143 @@ export class HospitalService {
     // ── DEMAS API ──────────────────────────────────────────────────────────────
 
     async fetchCnes(cnes: string): Promise<{ name: string; municipality: string; ufSigla: string; cnes: string }> {
-        const cleanCnes = cnes.trim().replace(/\D/g, "");
-        if (!cleanCnes || cleanCnes.length > 7) {
-            throw new BadRequestException("CNES inválido");
+        // CNES é sempre 7 dígitos com zero-padding (ex: 655 → 0000655)
+        const cleanCnes = cnes.trim().replace(/\D/g, "").padStart(7, "0");
+        if (!cleanCnes || cleanCnes.length !== 7) {
+            throw new BadRequestException("CNES inválido — deve ter até 7 dígitos numéricos");
         }
 
-        // Chamada 1 — estabelecimento
-        const estabRes = await fetch(`${DEMAS_BASE}/estabelecimentos/${cleanCnes}`);
-        if (!estabRes.ok) {
-            throw new NotFoundException(`CNES ${cleanCnes} não encontrado no DEMAS`);
+        // Chamada 1 — estabelecimento via DEMAS
+        let estab: DemasEstabelecimento;
+        try {
+            const estabRes = await fetch(`${DEMAS_BASE}/estabelecimentos/${cleanCnes}`);
+            if (!estabRes.ok) {
+                throw new NotFoundException(`CNES ${cleanCnes} não encontrado no DEMAS`);
+            }
+            const body = await estabRes.json() as DemasEstabelecimento | { estabelecimento?: DemasEstabelecimento; dados?: DemasEstabelecimento[] };
+            // A API pode retornar o objeto direto ou embrulhado em { estabelecimento: {...} }
+            estab = ("estabelecimento" in body && body.estabelecimento)
+                ? body.estabelecimento
+                : Array.isArray((body as { dados?: DemasEstabelecimento[] }).dados)
+                    ? (body as { dados: DemasEstabelecimento[] }).dados[0]
+                    : (body as DemasEstabelecimento);
+            if (!estab?.codigo_cnes) {
+                throw new NotFoundException(`CNES ${cleanCnes} não encontrado no DEMAS`);
+            }
+        } catch (err) {
+            if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
+            throw new InternalServerErrorException(`Falha ao consultar DEMAS: ${(err as Error).message ?? "serviço indisponível"}`);
         }
-        const estab: DemasEstabelecimento = await estabRes.json();
 
-        // Chamada 2 — município
-        const munRes = await fetch(`${DEMAS_BASE}/municipios/${estab.codigo_municipio}`);
-        if (!munRes.ok) {
-            throw new NotFoundException(`Município ${estab.codigo_municipio} não encontrado no DEMAS`);
+        // UF sigla via mapa local (codigo_uf do DEMAS = código IBGE da UF)
+        const ufSigla = UF_CODE_MAP[estab.codigo_uf];
+        if (!ufSigla) {
+            throw new NotFoundException(`UF com código ${estab.codigo_uf} não reconhecida`);
         }
-        const mun: DemasMunicipio = await munRes.json();
+
+        // Chamada 2 — município via IBGE (o endpoint do DEMAS para municípios está inoperante)
+        // O código CNES do município (6 dígitos) corresponde aos primeiros 6 dígitos do código IBGE (7 dígitos)
+        let municipios: IbgeMunicipio[];
+        try {
+            const munRes = await fetch(`${IBGE_BASE}/estados/${estab.codigo_uf}/municipios`);
+            if (!munRes.ok) {
+                throw new NotFoundException(`Não foi possível buscar municípios da UF ${ufSigla}`);
+            }
+            municipios = await munRes.json() as IbgeMunicipio[];
+        } catch (err) {
+            if (err instanceof NotFoundException) throw err;
+            throw new InternalServerErrorException(`Falha ao consultar IBGE: ${(err as Error).message ?? "serviço indisponível"}`);
+        }
+
+        const mun = municipios.find(m => String(m.id).startsWith(String(estab.codigo_municipio)));
+        if (!mun) {
+            throw new NotFoundException(`Município ${estab.codigo_municipio} não encontrado`);
+        }
 
         const rawName = estab.nome_fantasia || estab.nome_razao_social;
         return {
-            cnes: cleanCnes,
-            name: toTitleCase(rawName),
+            cnes:         cleanCnes,
+            name:         toTitleCase(rawName),
             municipality: toTitleCase(mun.nome),
-            ufSigla: mun.uf.toUpperCase(),
+            ufSigla,
         };
     }
 
     // ── LOOKUP (sem persistir) ─────────────────────────────────────────────────
+    // Verifica se o CNES já existe no banco e em quais módulos (TOMO / RNM).
 
     async lookup(cnes: string) {
-        return this.fetchCnes(cnes);
+        const external = await this.fetchCnes(cnes);
+
+        const existing = await this.hospitalRepo.findOne({
+            where: { cnes: external.cnes },
+            relations: { tomo: true, rnm: true },
+        });
+
+        return {
+            ...external,
+            existing: existing
+                ? {
+                      hospitalId: existing.id,
+                      hasTomo: existing.tomo !== null,
+                      hasRnm:  existing.rnm  !== null,
+                      tomo: existing.tomo ?? null,
+                  }
+                : null,
+        };
     }
 
-    // ── CREATE ─────────────────────────────────────────────────────────────────
+    // ── REGISTER FOR MODULE ────────────────────────────────────────────────────
+    // Cria o hospital se necessário e adiciona o registro do módulo solicitado.
+    // Se o hospital já existir, apenas cria o registro do módulo que ainda faltar.
 
-    async create(cnes: string): Promise<Hospital> {
-        const existing = await this.hospitalRepo.findOne({ where: { cnes } });
-        if (existing) throw new BadRequestException(`Hospital com CNES ${cnes} já cadastrado`);
+    async registerForModule(
+        cnes: string,
+        module: "tomo" | "rnm",
+        initialTomo?: UpdateHospitalTomoDto,
+    ): Promise<Hospital> {
+        const external = await this.fetchCnes(cnes);
 
-        const demas = await this.fetchCnes(cnes);
-
-        const uf = await this.ufRepo.findOne({ where: { uf: demas.ufSigla } });
-        if (!uf) throw new NotFoundException(`UF ${demas.ufSigla} não encontrada no banco`);
+        const existing = await this.hospitalRepo.findOne({
+            where: { cnes: external.cnes },
+            relations: { tomo: true, rnm: true },
+        });
 
         return this.dataSource.transaction(async (em) => {
-            const hospital = em.create(Hospital, {
-                ufId: uf.id,
-                name: demas.name,
-                municipality: demas.municipality,
-                cnes: demas.cnes,
-            });
-            await em.save(hospital);
+            let hospitalId: number;
 
-            // Cria os registros tomo/rnm vazios para o hospital
-            await em.save(HospitalTomo, em.create(HospitalTomo, { hospitalId: hospital.id }));
-            await em.save(HospitalRnm, em.create(HospitalRnm, { hospitalId: hospital.id }));
+            if (!existing) {
+                const uf = await this.ufRepo.findOne({ where: { uf: external.ufSigla } });
+                if (!uf) throw new NotFoundException(`UF ${external.ufSigla} não encontrada no banco`);
 
-            return hospital;
+                const hospital = em.create(Hospital, {
+                    ufId: uf.id,
+                    name: external.name,
+                    municipality: external.municipality,
+                    cnes: external.cnes,
+                });
+                await em.save(hospital);
+                hospitalId = hospital.id;
+            } else {
+                hospitalId = existing.id;
+            }
+
+            if (module === "tomo" && !existing?.tomo) {
+                await em.save(HospitalTomo, em.create(HospitalTomo, {
+                    hospitalId,
+                    ...(initialTomo ?? {}),
+                }));
+            } else if (module === "rnm" && !existing?.rnm) {
+                await em.save(HospitalRnm, em.create(HospitalRnm, { hospitalId }));
+            }
+
+            return em.findOneOrFail(Hospital, { where: { id: hospitalId } });
         });
+    }
+
+    // ── LEGACY create (alias) ──────────────────────────────────────────────────
+    async create(cnes: string, initialTomo?: UpdateHospitalTomoDto): Promise<Hospital> {
+        return this.registerForModule(cnes, "tomo", initialTomo);
     }
 
     // ── BULK CREATE ────────────────────────────────────────────────────────────
@@ -135,6 +220,22 @@ export class HospitalService {
         return { created, skipped, errors };
     }
 
+    // ── DELETE HOSPITAL ───────────────────────────────────────────────────────
+
+    async deleteHospital(id: number): Promise<void> {
+        const hospital = await this.hospitalRepo.findOne({
+            where: { id },
+            relations: { tomo: true, rnm: true },
+        });
+        if (!hospital) throw new NotFoundException(`Hospital ${id} não encontrado`);
+
+        await this.dataSource.transaction(async (em) => {
+            if (hospital.tomo) await em.remove(hospital.tomo);
+            if (hospital.rnm)  await em.remove(hospital.rnm);
+            await em.remove(hospital);
+        });
+    }
+
     // ── LIST TOMO ─────────────────────────────────────────────────────────────
 
     async findAllTomo() {
@@ -153,13 +254,32 @@ export class HospitalService {
         });
     }
 
+    // ── UPDATE HOSPITAL ───────────────────────────────────────────────────────
+
+    async updateHospital(id: number, data: UpdateHospitalDto): Promise<Hospital> {
+        const hospital = await this.hospitalRepo.findOne({ where: { id } });
+        if (!hospital) throw new NotFoundException(`Hospital ${id} não encontrado`);
+        if (data.cnes !== undefined) hospital.cnes = data.cnes ?? null;
+        return this.hospitalRepo.save(hospital);
+    }
+
     // ── UPDATE TOMO ───────────────────────────────────────────────────────────
 
     async updateTomo(hospitalId: number, data: UpdateHospitalTomoDto): Promise<HospitalTomo> {
         const record = await this.tomoRepo.findOne({ where: { hospitalId }, relations: { hospital: { uf: true } } });
         if (!record) throw new NotFoundException(`Registro TOMO para hospital ${hospitalId} não encontrado`);
 
-        Object.assign(record, data);
+        // Separar cnes (pertence à entidade hospital, não hospital_tomo)
+        const { cnes, ...tomoData } = data;
+        Object.assign(record, tomoData);
+
+        // Atualizar CNES do hospital se fornecido
+        if (cnes !== undefined) {
+            const normalizedCnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
+            record.hospital.cnes = normalizedCnes || null;
+            await this.hospitalRepo.save(record.hospital);
+        }
+
         return this.tomoRepo.save(record);
     }
 
@@ -169,7 +289,15 @@ export class HospitalService {
         const record = await this.rnmRepo.findOne({ where: { hospitalId }, relations: { hospital: { uf: true } } });
         if (!record) throw new NotFoundException(`Registro RNM para hospital ${hospitalId} não encontrado`);
 
-        Object.assign(record, data);
+        const { cnes, ...rnmData } = data;
+        Object.assign(record, rnmData);
+
+        if (cnes !== undefined) {
+            const normalizedCnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
+            record.hospital.cnes = normalizedCnes || null;
+            await this.hospitalRepo.save(record.hospital);
+        }
+
         return this.rnmRepo.save(record);
     }
 }

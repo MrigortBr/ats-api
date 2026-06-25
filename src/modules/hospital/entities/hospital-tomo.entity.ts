@@ -54,6 +54,9 @@ export class HospitalTomo {
     @Column({ type: "varchar", nullable: true })
     installed!: string | null; // 'sim' | 'Entrega agendada'
 
+    @Column({ name: "ebserh_priority", type: "boolean", nullable: true })
+    ebserhPriority!: boolean | null;
+
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
 

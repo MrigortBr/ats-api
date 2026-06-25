@@ -25,6 +25,12 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, StandardRespon
                     return response as unknown as StandardResponse<T>;
                 }
 
+                // void / 204 No Content — pass through so Node.js strips the
+                // body automatically (required by HTTP spec for 204 responses).
+                if (response === undefined || response === null) {
+                    return response as unknown as StandardResponse<T>;
+                }
+
                 const isObject =
                     response !== null &&
                     response !== undefined &&

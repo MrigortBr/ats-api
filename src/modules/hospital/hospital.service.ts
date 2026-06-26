@@ -260,6 +260,8 @@ export class HospitalService {
         const hospital = await this.hospitalRepo.findOne({ where: { id } });
         if (!hospital) throw new NotFoundException(`Hospital ${id} não encontrado`);
         if (data.cnes !== undefined) hospital.cnes = data.cnes ?? null;
+        if (data.gestao !== undefined) hospital.gestao = data.gestao ?? null;
+        if (data.naturezaJuridica !== undefined) hospital.naturezaJuridica = data.naturezaJuridica ?? null;
         return this.hospitalRepo.save(hospital);
     }
 
@@ -269,16 +271,19 @@ export class HospitalService {
         const record = await this.tomoRepo.findOne({ where: { hospitalId }, relations: { hospital: { uf: true } } });
         if (!record) throw new NotFoundException(`Registro TOMO para hospital ${hospitalId} não encontrado`);
 
-        // Separar cnes (pertence à entidade hospital, não hospital_tomo)
-        const { cnes, ...tomoData } = data;
+        // Separar campos que pertencem à entidade hospital
+        const { cnes, gestao, naturezaJuridica, ...tomoData } = data;
         Object.assign(record, tomoData);
 
-        // Atualizar CNES do hospital se fornecido
+        // Atualizar campos do hospital se fornecidos
+        let hospitalChanged = false;
         if (cnes !== undefined) {
-            const normalizedCnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
-            record.hospital.cnes = normalizedCnes || null;
-            await this.hospitalRepo.save(record.hospital);
+            record.hospital.cnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
+            hospitalChanged = true;
         }
+        if (gestao !== undefined) { record.hospital.gestao = gestao ?? null; hospitalChanged = true; }
+        if (naturezaJuridica !== undefined) { record.hospital.naturezaJuridica = naturezaJuridica ?? null; hospitalChanged = true; }
+        if (hospitalChanged) await this.hospitalRepo.save(record.hospital);
 
         return this.tomoRepo.save(record);
     }
@@ -289,14 +294,17 @@ export class HospitalService {
         const record = await this.rnmRepo.findOne({ where: { hospitalId }, relations: { hospital: { uf: true } } });
         if (!record) throw new NotFoundException(`Registro RNM para hospital ${hospitalId} não encontrado`);
 
-        const { cnes, ...rnmData } = data;
+        const { cnes, gestao, naturezaJuridica, ...rnmData } = data;
         Object.assign(record, rnmData);
 
+        let hospitalChanged = false;
         if (cnes !== undefined) {
-            const normalizedCnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
-            record.hospital.cnes = normalizedCnes || null;
-            await this.hospitalRepo.save(record.hospital);
+            record.hospital.cnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
+            hospitalChanged = true;
         }
+        if (gestao !== undefined) { record.hospital.gestao = gestao ?? null; hospitalChanged = true; }
+        if (naturezaJuridica !== undefined) { record.hospital.naturezaJuridica = naturezaJuridica ?? null; hospitalChanged = true; }
+        if (hospitalChanged) await this.hospitalRepo.save(record.hospital);
 
         return this.rnmRepo.save(record);
     }

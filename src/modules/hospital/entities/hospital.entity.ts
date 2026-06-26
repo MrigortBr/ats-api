@@ -32,6 +32,12 @@ export class Hospital {
     @Column({ type: "varchar", length: 7, nullable: true })
     cnes!: string | null;
 
+    @Column({ type: "varchar", nullable: true })
+    gestao!: string | null;
+
+    @Column({ name: "natureza_juridica", type: "varchar", nullable: true })
+    naturezaJuridica!: string | null;
+
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
 

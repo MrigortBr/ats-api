@@ -17,6 +17,8 @@ export class UpdateHospitalTomoDto {
     @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsBoolean() ebserhPriority?: boolean | null;
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryDate?: string | null;
+    @ApiPropertyOptional({ enum: ["E", "M", "D"] }) @IsOptional() @IsString() gestao?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() naturezaJuridica?: string | null;
 }
 
 export class UpdateHospitalRnmDto {
@@ -35,6 +37,8 @@ export class UpdateHospitalRnmDto {
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryDate?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
     @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string | null;
+    @ApiPropertyOptional({ enum: ["E", "M", "D"] }) @IsOptional() @IsString() gestao?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() naturezaJuridica?: string | null;
 }
 
 export class CreateHospitalDto {
@@ -56,6 +60,8 @@ export class CreateHospitalDto {
 
 export class UpdateHospitalDto {
     @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string | null;
+    @ApiPropertyOptional({ enum: ["E", "M", "D"] }) @IsOptional() @IsString() gestao?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() naturezaJuridica?: string | null;
 }
 
 export class BulkCreateHospitalDto {

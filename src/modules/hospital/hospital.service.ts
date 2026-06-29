@@ -4,8 +4,9 @@ import { Repository, DataSource } from "typeorm";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
+import { HospitalCombo } from "./entities/hospital-combo.entity";
 import { Uf } from "../uf/entities/uf.entity";
-import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto } from "./dto/hospital.dto";
+import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto } from "./dto/hospital.dto";
 
 const DEMAS_BASE = "https://apidadosabertos.saude.gov.br/cnes";
 const IBGE_BASE  = "https://servicodados.ibge.gov.br/api/v1/localidades";
@@ -50,6 +51,8 @@ export class HospitalService {
         private readonly tomoRepo: Repository<HospitalTomo>,
         @InjectRepository(HospitalRnm)
         private readonly rnmRepo: Repository<HospitalRnm>,
+        @InjectRepository(HospitalCombo)
+        private readonly comboRepo: Repository<HospitalCombo>,
         @InjectRepository(Uf)
         private readonly ufRepo: Repository<Uf>,
         private readonly dataSource: DataSource,
@@ -286,6 +289,35 @@ export class HospitalService {
         if (hospitalChanged) await this.hospitalRepo.save(record.hospital);
 
         return this.tomoRepo.save(record);
+    }
+
+    // ── LIST COMBO ────────────────────────────────────────────────────────────
+
+    async findAllCombo() {
+        return this.comboRepo.find({
+            relations: { hospital: { uf: true } },
+            order: { hospital: { uf: { uf: "ASC" }, name: "ASC" }, comboType: "ASC" },
+        });
+    }
+
+    // ── UPDATE COMBO ──────────────────────────────────────────────────────────
+
+    async updateCombo(id: number, data: UpdateHospitalComboDto): Promise<HospitalCombo> {
+        const record = await this.comboRepo.findOne({ where: { id }, relations: { hospital: { uf: true } } });
+        if (!record) throw new NotFoundException(`Registro COMBO ${id} não encontrado`);
+
+        const { cnes, cnpj, ...comboData } = data;
+        Object.assign(record, comboData);
+
+        let hospitalChanged = false;
+        if (cnes !== undefined) {
+            record.hospital.cnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
+            hospitalChanged = true;
+        }
+        if (cnpj !== undefined) { record.hospital.cnpj = cnpj ?? null; hospitalChanged = true; }
+        if (hospitalChanged) await this.hospitalRepo.save(record.hospital);
+
+        return this.comboRepo.save(record);
     }
 
     // ── UPDATE RNM ────────────────────────────────────────────────────────────

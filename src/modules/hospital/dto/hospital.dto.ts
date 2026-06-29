@@ -64,6 +64,16 @@ export class UpdateHospitalDto {
     @ApiPropertyOptional() @IsOptional() @IsString() naturezaJuridica?: string | null;
 }
 
+export class UpdateHospitalComboDto {
+    @ApiPropertyOptional({ enum: ["COMBO CIRURGIA", "COMBO OFTALMO"] }) @IsOptional() @IsString() comboType?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() contract?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() deliveryParcel?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() deliveryDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() notes?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() cnpj?: string | null;
+}
+
 export class BulkCreateHospitalDto {
     @ApiProperty({ description: "Array de CNES para importação em massa", type: [String] })
     @IsArray()

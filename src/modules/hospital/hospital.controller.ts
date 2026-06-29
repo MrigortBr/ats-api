@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { HospitalService } from "./hospital.service";
-import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto } from "./dto/hospital.dto";
+import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -103,6 +103,29 @@ export class HospitalController {
         @Body() dto: UpdateHospitalRnmDto,
     ) {
         return this.service.updateRnm(Number(hospitalId), dto);
+    }
+
+    // ── Listar COMBO ─────────────────────────────────────────────────────────
+
+    @Get("combo")
+    @Roles("admin", "gestor_tomo", "gestor_all", "visualizador_tomo", "visualizador_all")
+    @ApiOperation({ summary: "Listar todos os registros COMBO" })
+    findAllCombo() {
+        return this.service.findAllCombo();
+    }
+
+    // ── Atualizar COMBO ───────────────────────────────────────────────────────
+
+    @Put("combo/:id")
+    @Roles("admin", "gestor_tomo", "gestor_all")
+    @ApiOperation({ summary: "Atualizar dados de um registro COMBO pelo id do combo" })
+    @ApiResponse({ status: 200, description: "Dados COMBO atualizados" })
+    @ApiResponse({ status: 404, description: "Registro COMBO não encontrado" })
+    updateCombo(
+        @Param("id") id: string,
+        @Body() dto: UpdateHospitalComboDto,
+    ) {
+        return this.service.updateCombo(Number(id), dto);
     }
 
     // ── Deletar hospital ──────────────────────────────────────────────────────

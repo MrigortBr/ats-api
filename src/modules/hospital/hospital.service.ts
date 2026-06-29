@@ -6,7 +6,7 @@ import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
 import { HospitalCombo } from "./entities/hospital-combo.entity";
 import { Uf } from "../uf/entities/uf.entity";
-import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto } from "./dto/hospital.dto";
+import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto } from "./dto/hospital.dto";
 
 const DEMAS_BASE = "https://apidadosabertos.saude.gov.br/cnes";
 const IBGE_BASE  = "https://servicodados.ibge.gov.br/api/v1/localidades";
@@ -289,6 +289,37 @@ export class HospitalService {
         if (hospitalChanged) await this.hospitalRepo.save(record.hospital);
 
         return this.tomoRepo.save(record);
+    }
+
+    // ── CREATE COMBO ─────────────────────────────────────────────────────────
+
+    async createCombo(dto: CreateHospitalComboDto): Promise<HospitalCombo> {
+        const external = await this.fetchCnes(dto.cnes);
+
+        return this.dataSource.transaction(async (em) => {
+            let hospital = await em.findOne(Hospital, { where: { cnes: external.cnes } });
+
+            if (!hospital) {
+                const uf = await this.ufRepo.findOne({ where: { uf: external.ufSigla } });
+                if (!uf) throw new NotFoundException(`UF ${external.ufSigla} não encontrada`);
+                hospital = em.create(Hospital, {
+                    ufId: uf.id,
+                    name: external.name,
+                    municipality: external.municipality,
+                    cnes: external.cnes,
+                });
+                await em.save(hospital);
+            }
+
+            const { cnes: _cnes, ...comboData } = dto;
+            const combo = em.create(HospitalCombo, { hospitalId: hospital.id, ...comboData });
+            const saved = await em.save(HospitalCombo, combo);
+
+            return em.findOneOrFail(HospitalCombo, {
+                where: { id: saved.id },
+                relations: { hospital: { uf: true } },
+            });
+        });
     }
 
     // ── LIST COMBO ────────────────────────────────────────────────────────────

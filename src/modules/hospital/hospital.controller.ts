@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { HospitalService } from "./hospital.service";
-import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto } from "./dto/hospital.dto";
+import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -103,6 +103,16 @@ export class HospitalController {
         @Body() dto: UpdateHospitalRnmDto,
     ) {
         return this.service.updateRnm(Number(hospitalId), dto);
+    }
+
+    // ── Criar COMBO ──────────────────────────────────────────────────────────
+
+    @Post("combo")
+    @Roles("admin", "gestor_tomo", "gestor_all")
+    @ApiOperation({ summary: "Adicionar novo registro COMBO via CNES" })
+    @ApiResponse({ status: 201, description: "Registro COMBO criado" })
+    createCombo(@Body() dto: CreateHospitalComboDto) {
+        return this.service.createCombo(dto);
     }
 
     // ── Listar COMBO ─────────────────────────────────────────────────────────

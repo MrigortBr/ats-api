@@ -25,6 +25,12 @@ export class CotaGeralController {
     @ApiResponse({ status: 401, description: "Não autenticado" })
     findAll() { return this.service.findAll(); }
 
+    @Get("by-uf/:uf")
+    @ApiOperation({ summary: "Buscar cota geral por código UF, incluindo municípios" })
+    @ApiResponse({ status: 200, description: "UF com totais e lista de municípios" })
+    @ApiResponse({ status: 404, description: "UF não encontrada" })
+    findByUfCode(@Param("uf") uf: string) { return this.service.findByUfCode(uf.toUpperCase()); }
+
     @Get(":ufId")
     @ApiOperation({ summary: "Buscar cota geral por UF" })
     @ApiResponse({ status: 200, schema: { example: { timestamp: "2025-01-01T00:00:00.000Z", message: "OK", data: EXAMPLE } } })

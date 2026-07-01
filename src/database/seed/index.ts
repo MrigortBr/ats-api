@@ -334,7 +334,7 @@ async function seed() {
 
     // --- Usuarios extras ---
     // email e gerado automaticamente como nome.sobrenome@saude.gov.br
-    const USERS_TO_SEED: { name: string; surname: string; role: "admin" | "gestor_transporte" | "gestor_tomo" | "gestor_all" | "visualizador_transporte" | "visualizador_tomo" | "visualizador_all" }[] = [
+    const USERS_TO_SEED: { name: string; surname: string; role: "admin" | "gestor_transporte" | "gestor_tomo" | "gestor_all" | "gestor_all_combo" | "visualizador_transporte" | "visualizador_tomo" | "visualizador_all" }[] = [
         // { name: "Amanda", surname: "Chaves", role: "admin"  },
         // { name: "Igor",   surname: "Lins",  role: "admin" },
         { name: "Juarez", surname: "Silva", role: "admin"  },
@@ -346,6 +346,7 @@ async function seed() {
         // { name: "Philippe", surname: "Rodrigues", role: "visualizador_transporte" },
         // { name: "Raquel", surname: "Machado", role: "visualizador_transporte" },
         // { name: "Crystina", surname: "Yamamoto", role: "visualizador_transporte" },
+        { name: "Diana", surname: "Pereira", role: "gestor_all_combo" },
     ];
 
     if (USERS_TO_SEED.length > 0) {

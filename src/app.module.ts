@@ -18,6 +18,7 @@ import { ConsolidadoModule } from "./modules/consolidado/consolidado.module";
 import { HospitalModule } from "./modules/hospital/hospital.module";
 import { CibModule } from "./modules/cib/cib.module";
 import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
+import { CotaGeralMunicipioModule } from "./modules/cota-geral-municipio/cota-geral-municipio.module";
 
 @Module({
     controllers: [AppController],
@@ -43,6 +44,8 @@ import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
         CibModule,
         // RNM Documents
         RnmDocumentModule,
+        // Cota Geral - Municípios
+        CotaGeralMunicipioModule,
     ],
 })
 export class AppModule {}

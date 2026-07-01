@@ -1,4 +1,5 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Post, Req, UseGuards } from "@nestjs/common";
+import type { Request } from "express";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
@@ -19,6 +20,14 @@ export class AuthController {
     async login(@Body() body: LoginDto) {
         validatePayload(body as unknown as Record<string, unknown>, ["login", "password"], true);
         return this.authService.login(body as unknown as payload.login);
+    }
+
+    @Post("/refresh")
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth("bearer")
+    @ApiOperation({ summary: "Renova o token JWT (sliding session)" })
+    async refresh(@Req() req: Request) {
+        return this.authService.refresh(req.user as { id: number; email: string; role: string });
     }
 
     @Post("/users")

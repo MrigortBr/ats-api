@@ -41,6 +41,15 @@ export class AuthService {
         };
     }
 
+    async refresh(user: { id: number; email: string; role: string }) {
+        const token = this.jwtService.sign({
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+        });
+        return { access_token: token };
+    }
+
     async createUser(data: payload.createUser) {
         const existing = await this.authRepository.findByEmail(data.email);
         if (existing) throw new UserAlreadyExistsException();

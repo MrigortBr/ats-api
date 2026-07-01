@@ -14,6 +14,7 @@ import { HospitalTomo } from "../modules/hospital/entities/hospital-tomo.entity"
 import { HospitalRnm } from "../modules/hospital/entities/hospital-rnm.entity";
 import { HospitalCombo } from "../modules/hospital/entities/hospital-combo.entity";
 import { CibDocument } from "../modules/cib/entities/cib-document.entity";
+import { RnmDocument } from "../modules/rnm-document/entities/rnm-document.entity";
 
 configDotenv();
 
@@ -27,7 +28,7 @@ configDotenv();
             password: String(process.env.DB_PASSWORD),
             database: process.env.DB_DATABASE,
             schema: "public",
-            entities: [Users, Uf, TransportRtx, TransportTrs, GeneralQuota, DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue, Hospital, HospitalTomo, HospitalRnm, HospitalCombo, CibDocument],
+            entities: [Users, Uf, TransportRtx, TransportTrs, GeneralQuota, DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue, Hospital, HospitalTomo, HospitalRnm, HospitalCombo, CibDocument, RnmDocument],
             synchronize: false,
             migrations: ["dist/database/migrations/*.js"],
         }),

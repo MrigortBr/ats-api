@@ -17,6 +17,7 @@ import { CotaGeralModule } from "./modules/cota-geral/cota-geral.module";
 import { ConsolidadoModule } from "./modules/consolidado/consolidado.module";
 import { HospitalModule } from "./modules/hospital/hospital.module";
 import { CibModule } from "./modules/cib/cib.module";
+import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
 
 @Module({
     controllers: [AppController],
@@ -40,6 +41,8 @@ import { CibModule } from "./modules/cib/cib.module";
         HospitalModule,
         // CIB
         CibModule,
+        // RNM Documents
+        RnmDocumentModule,
     ],
 })
 export class AppModule {}

@@ -1,6 +1,7 @@
 import {
     Column,
     CreateDateColumn,
+    DeleteDateColumn,
     Entity,
     JoinColumn,
     OneToOne,
@@ -72,4 +73,7 @@ export class HospitalRnm {
 
     @UpdateDateColumn({ name: "updated_at", nullable: true })
     updatedAt!: Date | null;
+
+    @DeleteDateColumn({ name: "deleted_at", nullable: true })
+    deletedAt!: Date | null;
 }

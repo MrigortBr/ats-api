@@ -1,6 +1,7 @@
 import {
     Column,
     CreateDateColumn,
+    DeleteDateColumn,
     Entity,
     JoinColumn,
     OneToOne,
@@ -54,6 +55,9 @@ export class HospitalTomo {
     @Column({ type: "varchar", nullable: true })
     installed!: string | null; // 'sim' | 'Entrega agendada'
 
+    @Column({ name: "delivery_date", type: "varchar", nullable: true })
+    deliveryDate!: string | null;
+
     @Column({ name: "ebserh_priority", type: "boolean", nullable: true })
     ebserhPriority!: boolean | null;
 
@@ -62,4 +66,7 @@ export class HospitalTomo {
 
     @UpdateDateColumn({ name: "updated_at", nullable: true })
     updatedAt!: Date | null;
+
+    @DeleteDateColumn({ name: "deleted_at", nullable: true })
+    deletedAt!: Date | null;
 }

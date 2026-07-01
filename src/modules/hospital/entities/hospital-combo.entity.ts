@@ -1,6 +1,7 @@
 import {
     Column,
     CreateDateColumn,
+    DeleteDateColumn,
     Entity,
     JoinColumn,
     ManyToOne,
@@ -41,4 +42,7 @@ export class HospitalCombo {
 
     @UpdateDateColumn({ name: "updated_at", nullable: true })
     updatedAt!: Date | null;
+
+    @DeleteDateColumn({ name: "deleted_at", nullable: true })
+    deletedAt!: Date | null;
 }

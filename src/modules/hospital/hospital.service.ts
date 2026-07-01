@@ -223,7 +223,7 @@ export class HospitalService {
         return { created, skipped, errors };
     }
 
-    // ── DELETE HOSPITAL ───────────────────────────────────────────────────────
+    // ── DELETE HOSPITAL (hard delete — base + todos os vínculos) ─────────────
 
     async deleteHospital(id: number): Promise<void> {
         const hospital = await this.hospitalRepo.findOne({
@@ -237,6 +237,26 @@ export class HospitalService {
             if (hospital.rnm)  await em.remove(hospital.rnm);
             await em.remove(hospital);
         });
+    }
+
+    // ── SOFT DELETE por módulo ────────────────────────────────────────────────
+
+    async softDeleteTomo(id: number): Promise<void> {
+        const record = await this.tomoRepo.findOne({ where: { id } });
+        if (!record) throw new NotFoundException(`Registro TOMO ${id} não encontrado`);
+        await this.tomoRepo.softDelete(id);
+    }
+
+    async softDeleteRnm(id: number): Promise<void> {
+        const record = await this.rnmRepo.findOne({ where: { id } });
+        if (!record) throw new NotFoundException(`Registro RNM ${id} não encontrado`);
+        await this.rnmRepo.softDelete(id);
+    }
+
+    async softDeleteCombo(id: number): Promise<void> {
+        const record = await this.comboRepo.findOne({ where: { id } });
+        if (!record) throw new NotFoundException(`Registro COMBO ${id} não encontrado`);
+        await this.comboRepo.softDelete(id);
     }
 
     // ── LIST TOMO ─────────────────────────────────────────────────────────────

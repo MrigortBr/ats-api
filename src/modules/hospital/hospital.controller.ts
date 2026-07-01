@@ -138,7 +138,43 @@ export class HospitalController {
         return this.service.updateCombo(Number(id), dto);
     }
 
-    // ── Deletar hospital ──────────────────────────────────────────────────────
+    // ── Soft delete TOMO ─────────────────────────────────────────────────────
+
+    @Delete("tomo/:id")
+    @Roles("admin")
+    @HttpCode(204)
+    @ApiOperation({ summary: "Inativar registro TOMO (soft delete)" })
+    @ApiResponse({ status: 204, description: "Registro TOMO inativado" })
+    @ApiResponse({ status: 404, description: "Registro não encontrado" })
+    softDeleteTomo(@Param("id") id: string) {
+        return this.service.softDeleteTomo(Number(id));
+    }
+
+    // ── Soft delete RNM ──────────────────────────────────────────────────────
+
+    @Delete("rnm/:id")
+    @Roles("admin")
+    @HttpCode(204)
+    @ApiOperation({ summary: "Inativar registro RNM (soft delete)" })
+    @ApiResponse({ status: 204, description: "Registro RNM inativado" })
+    @ApiResponse({ status: 404, description: "Registro não encontrado" })
+    softDeleteRnm(@Param("id") id: string) {
+        return this.service.softDeleteRnm(Number(id));
+    }
+
+    // ── Soft delete COMBO ─────────────────────────────────────────────────────
+
+    @Delete("combo/:id")
+    @Roles("admin")
+    @HttpCode(204)
+    @ApiOperation({ summary: "Inativar registro COMBO (soft delete)" })
+    @ApiResponse({ status: 204, description: "Registro COMBO inativado" })
+    @ApiResponse({ status: 404, description: "Registro não encontrado" })
+    softDeleteCombo(@Param("id") id: string) {
+        return this.service.softDeleteCombo(Number(id));
+    }
+
+    // ── Deletar hospital (hard delete — base + todos os vínculos) ────────────
 
     @Delete(":id")
     @Roles("admin")

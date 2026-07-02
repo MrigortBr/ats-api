@@ -33,6 +33,10 @@ export class EntregaController {
     @ApiResponse({ status: 401, description: "Não autenticado" })
     findAll() { return this.service.findAll(); }
 
+    @Get("by-uf/:uf")
+    @ApiOperation({ summary: "Buscar entregas por código UF (ex: AC, SP)" })
+    findByUfCode(@Param("uf") uf: string) { return this.service.findByUfCode(uf.toUpperCase()); }
+
     @Get(":ufId")
     @ApiOperation({ summary: "Buscar entregas por UF" })
     @ApiResponse({ status: 200, schema: { example: { timestamp: "2025-01-01T00:00:00.000Z", message: "OK", data: EXAMPLE } } })

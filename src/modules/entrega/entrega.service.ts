@@ -61,6 +61,25 @@ export class EntregaService {
         };
     }
 
+    async findByUfCode(ufCode: string) {
+        const uf = await this.ufRepo.findByUf(ufCode);
+        if (!uf) throw new NotFoundException(`UF ${ufCode} não encontrada`);
+
+        const [tRtx, tTrs, gq, dRtxTrs, dGq] = await Promise.all([
+            this.transportRtxRepo.findByUfId(uf.id),
+            this.transportTrsRepo.findByUfId(uf.id),
+            this.generalQuotaRepo.findByUfId(uf.id),
+            this.deliveredRtxTrsRepo.findByUfId(uf.id),
+            this.deliveredGeneralQuotaRepo.findByUfId(uf.id),
+        ]);
+
+        return {
+            uf,
+            transport: { rtx: tRtx, trs: tTrs, generalQuota: gq },
+            delivered: { rtxTrs: dRtxTrs, generalQuota: dGq },
+        };
+    }
+
     async updateByUfId(ufId: number, data: UpdateEntregaDto) {
         const uf = await this.ufRepo.findById(ufId);
         if (!uf) throw new NotFoundException(`UF ${ufId} nao encontrada`);

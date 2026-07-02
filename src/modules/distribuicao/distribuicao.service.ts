@@ -38,6 +38,18 @@ export class DistribuicaoService {
         return { uf, rtx, trs };
     }
 
+    async findByUfCode(ufCode: string) {
+        const uf = await this.ufRepo.findByUf(ufCode);
+        if (!uf) throw new NotFoundException(`UF ${ufCode} não encontrada`);
+
+        const [rtx, trs] = await Promise.all([
+            this.transportRtxRepo.findByUfId(uf.id),
+            this.transportTrsRepo.findByUfId(uf.id),
+        ]);
+
+        return { uf, rtx, trs };
+    }
+
     async updateByUfId(ufId: number, data: UpdateDistribuicaoDto) {
         const uf = await this.ufRepo.findById(ufId);
         if (!uf) throw new NotFoundException(`UF ${ufId} não encontrada`);

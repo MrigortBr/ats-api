@@ -33,6 +33,11 @@ export class HospitalController {
         return this.service.findAllTomo();
     }
 
+    @Get("tomo/by-uf/:uf")
+    @Roles("admin", "gestor_tomo", "gestor_all", "gestor_all_combo", "visualizador_tomo", "visualizador_all")
+    @ApiOperation({ summary: "Listar hospitais TOMO por sigla UF (ex: SP)" })
+    findTomoByUf(@Param("uf") uf: string) { return this.service.findTomoByUf(uf.toUpperCase()); }
+
     // ── Listar tabela RNM ─────────────────────────────────────────────────────
 
     @Get("rnm")
@@ -41,6 +46,11 @@ export class HospitalController {
     findAllRnm() {
         return this.service.findAllRnm();
     }
+
+    @Get("rnm/by-uf/:uf")
+    @Roles("admin", "gestor_tomo", "gestor_all", "gestor_all_combo", "visualizador_tomo", "visualizador_all")
+    @ApiOperation({ summary: "Listar hospitais RNM por sigla UF (ex: SP)" })
+    findRnmByUf(@Param("uf") uf: string) { return this.service.findRnmByUf(uf.toUpperCase()); }
 
     // ── Criar hospital (single) ───────────────────────────────────────────────
 
@@ -124,6 +134,11 @@ export class HospitalController {
         return this.service.findAllCombo();
     }
 
+    @Get("combo/by-uf/:uf")
+    @Roles("admin", "gestor_tomo", "gestor_all", "gestor_all_combo", "visualizador_tomo", "visualizador_all")
+    @ApiOperation({ summary: "Listar registros COMBO por sigla UF (ex: SP)" })
+    findComboByUf(@Param("uf") uf: string) { return this.service.findComboByUf(uf.toUpperCase()); }
+
     // ── Atualizar COMBO ───────────────────────────────────────────────────────
 
     @Put("combo/:id")
@@ -162,7 +177,7 @@ export class HospitalController {
         return this.service.softDeleteRnm(Number(id));
     }
 
-    // ── Soft delete COMBO ─────────────────────────────────────────────────────
+    // ── Soft delete COMBO ──────────────────────────────────────────────────────
 
     @Delete("combo/:id")
     @Roles("admin")
@@ -174,7 +189,7 @@ export class HospitalController {
         return this.service.softDeleteCombo(Number(id));
     }
 
-    // ── Deletar hospital (hard delete — base + todos os vínculos) ────────────
+    // ── Deletar hospital (hard delete — base + todos os vínculos) ────────
 
     @Delete(":id")
     @Roles("admin")

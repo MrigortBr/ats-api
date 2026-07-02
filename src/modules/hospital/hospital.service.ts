@@ -268,12 +268,28 @@ export class HospitalService {
         });
     }
 
+    async findTomoByUf(ufSigla: string) {
+        return this.tomoRepo.find({
+            where: { hospital: { uf: { uf: ufSigla } } },
+            relations: { hospital: { uf: true } },
+            order: { hospital: { name: "ASC" } },
+        });
+    }
+
     // ── LIST RNM ──────────────────────────────────────────────────────────────
 
     async findAllRnm() {
         return this.rnmRepo.find({
             relations: { hospital: { uf: true } },
             order: { hospital: { uf: { uf: "ASC" }, name: "ASC" } },
+        });
+    }
+
+    async findRnmByUf(ufSigla: string) {
+        return this.rnmRepo.find({
+            where: { hospital: { uf: { uf: ufSigla } } },
+            relations: { hospital: { uf: true } },
+            order: { hospital: { name: "ASC" } },
         });
     }
 
@@ -348,6 +364,14 @@ export class HospitalService {
         return this.comboRepo.find({
             relations: { hospital: { uf: true } },
             order: { hospital: { uf: { uf: "ASC" }, name: "ASC" }, comboType: "ASC" },
+        });
+    }
+
+    async findComboByUf(ufSigla: string) {
+        return this.comboRepo.find({
+            where: { hospital: { uf: { uf: ufSigla } } },
+            relations: { hospital: { uf: true } },
+            order: { hospital: { name: "ASC" }, comboType: "ASC" },
         });
     }
 

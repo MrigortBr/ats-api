@@ -70,7 +70,7 @@ export class HospitalService {
         // Chamada 1 — estabelecimento via DEMAS
         let estab: DemasEstabelecimento;
         try {
-            const estabRes = await fetch(`${DEMAS_BASE}/estabelecimentos/${cleanCnes}`);
+            const estabRes = await fetch(`${DEMAS_BASE}/estabelecimentos/${cleanCnes}`, { signal: AbortSignal.timeout(8_000) });
             if (!estabRes.ok) {
                 throw new NotFoundException(`CNES ${cleanCnes} não encontrado no DEMAS`);
             }
@@ -86,7 +86,10 @@ export class HospitalService {
             }
         } catch (err) {
             if (err instanceof NotFoundException || err instanceof BadRequestException) throw err;
-            throw new InternalServerErrorException(`Falha ao consultar DEMAS: ${(err as Error).message ?? "serviço indisponível"}`);
+            const isTimeout = (err as DOMException)?.name === 'TimeoutError';
+            throw new InternalServerErrorException(
+                isTimeout ? `DEMAS não respondeu em 8s — tente novamente` : `Falha ao consultar DEMAS: ${(err as Error).message ?? "serviço indisponível"}`,
+            );
         }
 
         // UF sigla via mapa local (codigo_uf do DEMAS = código IBGE da UF)
@@ -99,14 +102,17 @@ export class HospitalService {
         // O código CNES do município (6 dígitos) corresponde aos primeiros 6 dígitos do código IBGE (7 dígitos)
         let municipios: IbgeMunicipio[];
         try {
-            const munRes = await fetch(`${IBGE_BASE}/estados/${estab.codigo_uf}/municipios`);
+            const munRes = await fetch(`${IBGE_BASE}/estados/${estab.codigo_uf}/municipios`, { signal: AbortSignal.timeout(8_000) });
             if (!munRes.ok) {
                 throw new NotFoundException(`Não foi possível buscar municípios da UF ${ufSigla}`);
             }
             municipios = await munRes.json() as IbgeMunicipio[];
         } catch (err) {
             if (err instanceof NotFoundException) throw err;
-            throw new InternalServerErrorException(`Falha ao consultar IBGE: ${(err as Error).message ?? "serviço indisponível"}`);
+            const isTimeout = (err as DOMException)?.name === 'TimeoutError';
+            throw new InternalServerErrorException(
+                isTimeout ? `IBGE não respondeu em 8s — tente novamente` : `Falha ao consultar IBGE: ${(err as Error).message ?? "serviço indisponível"}`,
+            );
         }
 
         const mun = municipios.find(m => String(m.id).startsWith(String(estab.codigo_municipio)));
@@ -205,19 +211,30 @@ export class HospitalService {
     async bulkCreate(cnesList: string[]): Promise<{ created: string[]; skipped: string[]; errors: string[] }> {
         const created: string[] = [];
         const skipped: string[] = [];
-        const errors: string[] = [];
+        const errors:  string[] = [];
 
-        for (const cnes of cnesList) {
-            const existing = await this.hospitalRepo.findOne({ where: { cnes } });
-            if (existing) { skipped.push(cnes); continue; }
+        const CONCURRENCY = 5;
 
-            try {
-                await this.create(cnes);
-                created.push(cnes);
-            } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : String(err);
-                errors.push(`${cnes}: ${message}`);
-            }
+        for (let i = 0; i < cnesList.length; i += CONCURRENCY) {
+            const batch   = cnesList.slice(i, i + CONCURRENCY);
+            const results = await Promise.allSettled(
+                batch.map(async (cnes) => {
+                    const existing = await this.hospitalRepo.findOne({ where: { cnes } });
+                    if (existing) return { status: "skipped" as const, cnes };
+                    await this.create(cnes);
+                    return { status: "created" as const, cnes };
+                }),
+            );
+
+            results.forEach((result, j) => {
+                const cnes = batch[j];
+                if (result.status === "fulfilled") {
+                    result.value.status === "created" ? created.push(cnes) : skipped.push(cnes);
+                } else {
+                    const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
+                    errors.push(`${cnes}: ${message}`);
+                }
+            });
         }
 
         return { created, skipped, errors };
@@ -329,7 +346,7 @@ export class HospitalService {
 
     // ── CREATE COMBO ─────────────────────────────────────────────────────────
 
-    async createCombo(dto: CreateHospitalComboDto): Promise<HospitalCombo> {
+    async createCombo(dto: CreateHospitalComboDto, companyId?: number | null): Promise<HospitalCombo> {
         const external = await this.fetchCnes(dto.cnes);
 
         return this.dataSource.transaction(async (em) => {
@@ -348,7 +365,11 @@ export class HospitalService {
             }
 
             const { cnes: _cnes, ...comboData } = dto;
-            const combo = em.create(HospitalCombo, { hospitalId: hospital.id, ...comboData });
+            const combo = em.create(HospitalCombo, {
+                hospitalId: hospital.id,
+                ...comboData,
+                companyId: companyId ?? null,
+            });
             const saved = await em.save(HospitalCombo, combo);
 
             return em.findOneOrFail(HospitalCombo, {
@@ -360,16 +381,19 @@ export class HospitalService {
 
     // ── LIST COMBO ────────────────────────────────────────────────────────────
 
-    async findAllCombo() {
+    async findAllCombo(companyId?: number | null) {
         return this.comboRepo.find({
+            where: companyId ? { companyId } : undefined,
             relations: { hospital: { uf: true } },
             order: { hospital: { uf: { uf: "ASC" }, name: "ASC" }, comboType: "ASC" },
         });
     }
 
-    async findComboByUf(ufSigla: string) {
+    async findComboByUf(ufSigla: string, companyId?: number | null) {
         return this.comboRepo.find({
-            where: { hospital: { uf: { uf: ufSigla } } },
+            where: companyId
+                ? { hospital: { uf: { uf: ufSigla } }, companyId }
+                : { hospital: { uf: { uf: ufSigla } } },
             relations: { hospital: { uf: true } },
             order: { hospital: { name: "ASC" }, comboType: "ASC" },
         });

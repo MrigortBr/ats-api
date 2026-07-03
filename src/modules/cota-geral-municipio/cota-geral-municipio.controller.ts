@@ -1,3 +1,4 @@
+import { SkipThrottle } from "@nestjs/throttler";
 import { Body, Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -6,6 +7,7 @@ import { CotaGeralMunicipioService } from "./cota-geral-municipio.service";
 @ApiTags("Cota Geral - Municípios")
 @ApiBearerAuth("bearer")
 @UseGuards(JwtAuthGuard)
+@SkipThrottle()
 @Controller("/cota-geral-municipio")
 export class CotaGeralMunicipioController {
     constructor(private readonly service: CotaGeralMunicipioService) {}

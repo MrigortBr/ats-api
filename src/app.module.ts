@@ -1,6 +1,9 @@
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { AppController } from "./app.controller";
 import { DatabaseModule } from "./database/database.module";
+import { RedisModule } from "./modules/redis/redis.module";
 import { AuthModule } from "./modules/auth/auth.module";
 // Entity modules
 import { UfModule } from "./modules/uf/uf.module";
@@ -19,11 +22,18 @@ import { HospitalModule } from "./modules/hospital/hospital.module";
 import { CibModule } from "./modules/cib/cib.module";
 import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
 import { CotaGeralMunicipioModule } from "./modules/cota-geral-municipio/cota-geral-municipio.module";
+import { CompanyModule } from "./modules/company/company.module";
+import { RoleModule } from "./modules/role/role.module";
 
 @Module({
     controllers: [AppController],
+    providers: [
+        { provide: APP_GUARD, useClass: ThrottlerGuard },
+    ],
     imports: [
+        ThrottlerModule.forRoot([{ name: "global", ttl: 60_000, limit: 300 }]),
         DatabaseModule,
+        RedisModule,
         AuthModule,
         // Entity modules
         UfModule,
@@ -44,8 +54,11 @@ import { CotaGeralMunicipioModule } from "./modules/cota-geral-municipio/cota-ge
         CibModule,
         // RNM Documents
         RnmDocumentModule,
-        // Cota Geral - Municípios
+        // Cota Geral - Municipios
         CotaGeralMunicipioModule,
+        // RBAC / Multi-tenant
+        CompanyModule,
+        RoleModule,
     ],
 })
 export class AppModule {}

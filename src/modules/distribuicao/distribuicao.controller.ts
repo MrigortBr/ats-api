@@ -1,10 +1,11 @@
+import { SkipThrottle } from "@nestjs/throttler";
 import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { DistribuicaoService } from "./distribuicao.service";
 import { UpdateDistribuicaoDto } from "./dto/distribuicao.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { Roles } from "../auth/decorators/roles.decorator";
+import { ModuleGuard } from "../auth/guards/module.guard";
+import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 
 const EXAMPLE = {
     uf: { id: 1, uf: "AC", state: "Acre", agreement: null, cib: null },
@@ -14,7 +15,9 @@ const EXAMPLE = {
 
 @ApiTags("Distribuição")
 @ApiBearerAuth("bearer")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ModuleGuard)
+@RequiresModule("transporte")
+@SkipThrottle()
 @Controller("/distribuicao")
 export class DistribuicaoController {
     constructor(private readonly service: DistribuicaoService) {}
@@ -36,9 +39,7 @@ export class DistribuicaoController {
     findByUfId(@Param("ufId", ParseIntPipe) ufId: number) { return this.service.findByUfId(ufId); }
 
     @Put(":ufId")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor_transporte", "gestor_all")
-    @ApiOperation({ summary: "Atualizar RTX e/ou TRS de uma UF (admin/gestor)" })
+        @ApiOperation({ summary: "Atualizar RTX e/ou TRS de uma UF (admin/gestor)" })
     @ApiResponse({ status: 200, description: "Distribuição atualizada" })
     @ApiResponse({ status: 403, description: "Sem permissão" })
     updateByUfId(@Param("ufId", ParseIntPipe) ufId: number, @Body() body: UpdateDistribuicaoDto) {

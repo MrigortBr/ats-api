@@ -1,12 +1,10 @@
+import { v4 as uuidv4 } from "uuid";
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { AuthRepository } from "./auth.repository";
 import { InvalidCredentialsException } from "./exceptions/invalid.exception";
-import { UserAlreadyExistsException } from "./exceptions/userAlready.exception";
 import * as payload from "./type/payload";
-import { generatePassword, generateLogin } from "../../common/utils/generate-credentials";
-import { sendCredentialsEmail } from "../../common/mail/mail.service";
 
 @Injectable()
 export class AuthService {
@@ -23,72 +21,63 @@ export class AuthService {
         const passwordMatch = await bcrypt.compare(data.password, user.password);
         if (!passwordMatch) throw new InvalidCredentialsException();
 
+        // Resolve módulos efetivos: role.roleModules ∪ modulesOverride
+        const roleModules: string[] = user.roleEntity?.roleModules?.map((rm) => rm.module) ?? [];
+        const overrides: string[]   = user.modulesOverride ?? [];
+        const modules = [...new Set([...roleModules, ...overrides])];
+        const writeModules: string[] = user.roleEntity?.roleModules?.filter((rm) => rm.canWrite).map((rm) => rm.module) ?? [];
+
+        const jti = uuidv4();
         const token = this.jwtService.sign({
-            sub: user.id,
-            email: user.email,
-            role: user.role,
+            jti,
+            sub:       user.id,
+            email:     user.email,
+            /** RBAC */
+            roleId:    user.roleId,
+            modules,
+            writeModules,
+            companyId: user.companyId,
         });
 
         return {
             access_token: token,
             user: {
-                id: user.id,
-                name: user.name,
-                surname: user.surname,
-                email: user.email,
-                role: user.role,
+                id:        user.id,
+                name:      user.name,
+                surname:   user.surname,
+                email:     user.email,
+                /** RBAC */
+                roleId:    user.roleId,
+                modules,
+                writeModules,
+                companyId: user.companyId,
             },
         };
     }
 
-    async refresh(user: { id: number; email: string; role: string }) {
+    async refresh(user: {
+        id: number;
+        email: string;
+        roleId?: number | null;
+        modules?: string[];
+        companyId?: number | null;
+    }) {
+        // Re-lê o usuário para pegar módulos atualizados (ex: admin mudou permissões)
+        const dbUser = await this.authRepository.findById(user.id);
+        const roleModules: string[] = dbUser?.roleEntity?.roleModules?.map((rm) => rm.module) ?? [];
+        const overrides: string[]   = dbUser?.modulesOverride ?? [];
+        const modules = [...new Set([...roleModules, ...overrides])];
+        const writeModules: string[] = dbUser?.roleEntity?.roleModules?.filter((rm) => rm.canWrite).map((rm) => rm.module) ?? [];
+
         const token = this.jwtService.sign({
-            sub: user.id,
-            email: user.email,
-            role: user.role,
+            jti:       uuidv4(),
+            sub:       user.id,
+            email:     user.email,
+            roleId:    dbUser?.roleId ?? user.roleId,
+            modules,
+            writeModules,
+            companyId: dbUser?.companyId ?? user.companyId,
         });
         return { access_token: token };
-    }
-
-    async createUser(data: payload.createUser) {
-        const existing = await this.authRepository.findByEmail(data.email);
-        if (existing) throw new UserAlreadyExistsException();
-
-        // Se nao veio senha, gera automaticamente: NomeSobrenome + 3 digitos
-        const plainPassword = data.password && data.password.trim()
-            ? data.password
-            : generatePassword(data.name, data.surname);
-
-        const login = generateLogin(data.name, data.surname);
-
-        const hashedPassword = await bcrypt.hash(
-            plainPassword,
-            Number(process.env.HASH_AMOUNT) || 12,
-        );
-
-        await this.authRepository.create({
-            name: data.name,
-            surname: data.surname,
-            email: data.email,
-            password: hashedPassword,
-            role: data.role,
-        });
-
-        // Envia credenciais por e-mail (nao bloqueia em caso de falha)
-        if (process.env.MAIL_USER) {
-            sendCredentialsEmail({
-                to: data.email,
-                name: data.name + " " + data.surname,
-                password: plainPassword,
-            }).catch((err) =>
-                console.warn("[mail] Falha ao enviar credenciais:", err && err.message),
-            );
-        }
-
-        return {
-            message: "Usuario cadastrado com sucesso",
-            login,
-            passwordGenerated: !(data.password && data.password.trim()),
-        };
     }
 }

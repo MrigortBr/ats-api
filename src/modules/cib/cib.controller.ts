@@ -2,6 +2,7 @@ import {
     Controller, Delete, Get, Param, Post,
     Req, StreamableFile, UploadedFile, UseGuards, UseInterceptors,
 } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
@@ -16,12 +17,14 @@ interface MulterFile {
 }
 import { CibService } from "./cib.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { Roles } from "../auth/decorators/roles.decorator";
+import { ModuleGuard } from "../auth/guards/module.guard";
+import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 
 @ApiTags("CIB")
 @ApiBearerAuth("bearer")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ModuleGuard)
+@RequiresModule("transporte")
+@SkipThrottle()
 @Controller("/cib")
 export class CibController {
     constructor(private readonly service: CibService) {}
@@ -29,9 +32,7 @@ export class CibController {
     // ── Upload ────────────────────────────────────────────────────────────────
 
     @Post(":ufId")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor_transporte", "gestor_all")
-    @UseInterceptors(FileInterceptor("file", {
+        @UseInterceptors(FileInterceptor("file", {
         limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
         fileFilter: (_req, file, cb) => {
             const allowed = [
@@ -79,9 +80,7 @@ export class CibController {
     // ── Delete ────────────────────────────────────────────────────────────────
 
     @Delete(":id")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor_transporte", "gestor_all")
-    @ApiOperation({ summary: "Deletar um CIB pelo ID" })
+        @ApiOperation({ summary: "Deletar um CIB pelo ID" })
     async delete(@Param("id") id: string) {
         await this.service.delete(Number(id));
         return { message: "CIB removido com sucesso" };

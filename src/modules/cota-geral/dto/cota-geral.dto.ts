@@ -1,12 +1,14 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { IsNumber, IsOptional, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
 
 export class UpdateCotaGeralQuotaDto {
-    @ApiPropertyOptional() van?: number;
-    @ApiPropertyOptional() ambulance?: number;
-    @ApiPropertyOptional() microbus?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() van?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() ambulance?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() microbus?: number;
 }
 
 export class UpdateCotaGeralDto {
-    @ApiPropertyOptional() generalQuota?: UpdateCotaGeralQuotaDto;
-    @ApiPropertyOptional() deliveredGeneralQuota?: UpdateCotaGeralQuotaDto;
+    @ApiPropertyOptional() @IsOptional() @ValidateNested() @Type(() => UpdateCotaGeralQuotaDto) generalQuota?: UpdateCotaGeralQuotaDto;
+    @ApiPropertyOptional() @IsOptional() @ValidateNested() @Type(() => UpdateCotaGeralQuotaDto) deliveredGeneralQuota?: UpdateCotaGeralQuotaDto;
 }

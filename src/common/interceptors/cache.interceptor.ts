@@ -34,7 +34,7 @@ export class HttpCacheInterceptor implements NestInterceptor {
                 if (isGet && !isExcluded) {
                     response.setHeader(
                         "Cache-Control",
-                        `public, max-age=${this.CACHE_SECONDS}, stale-while-revalidate=${this.SWR_SECONDS}`,
+                        `private, max-age=${this.CACHE_SECONDS}, stale-while-revalidate=${this.SWR_SECONDS}`,
                     );
                 } else {
                     response.setHeader("Cache-Control", "no-store");

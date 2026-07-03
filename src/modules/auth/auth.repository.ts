@@ -8,7 +8,11 @@ interface CreateUserData {
     surname: string;
     email: string;
     password: string;
-    role: UserRole;
+    /** Legado */
+    role?: UserRole | null;
+    /** RBAC */
+    roleId?: number | null;
+    companyId?: number | null;
 }
 
 @Injectable()
@@ -19,11 +23,28 @@ export class AuthRepository {
     ) {}
 
     async findByEmail(email: string): Promise<Users | null> {
-        return this.userRepository.findOne({ where: { email } });
+        return this.userRepository.findOne({
+            where: { email },
+            relations: { roleEntity: { roleModules: true } },
+        });
+    }
+
+    async findById(id: number): Promise<Users | null> {
+        return this.userRepository.findOne({
+            where: { id },
+            relations: { roleEntity: { roleModules: true } },
+        });
     }
 
     async create(data: CreateUserData): Promise<Users> {
-        const user = this.userRepository.create(data);
+        const user = this.userRepository.create({
+            name:      data.name,
+            surname:   data.surname,
+            email:     data.email,
+            password:  data.password,
+            roleId:    data.roleId ?? null,
+            companyId: data.companyId ?? null,
+        });
         return this.userRepository.save(user);
     }
 }

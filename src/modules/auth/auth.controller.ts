@@ -1,43 +1,81 @@
-import { Body, Controller, Post, Req, UseGuards } from "@nestjs/common";
-import type { Request } from "express";
+import { Body, Controller, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
+import type { Request, Response } from "express";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
+import { TokenBlocklistService } from "./services/token-blocklist.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { RolesGuard } from "./guards/roles.guard";
-import { Roles } from "./decorators/roles.decorator";
 import { validatePayload } from "../../utils/payload";
-import { CreateUserDto, LoginDto } from "./dto/create-user.dto";
+import { LoginDto } from "./dto/create-user.dto";
 import * as payload from "./type/payload";
+
+const COOKIE_NAME = "jwt";
+const COOKIE_MAX_AGE = 30 * 60 * 1000; // 30 min — deve casar com JWT_EXPIRES_IN
+
+function cookieOptions() {
+    return {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict" as const,
+        maxAge: COOKIE_MAX_AGE,
+    };
+}
 
 @ApiTags("auth")
 @Controller("/auth")
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly authService: AuthService,
+        private readonly blocklist: TokenBlocklistService,
+    ) {}
 
     @Post("/login")
-    @ApiOperation({ summary: "Login - retorna JWT" })
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
+    @ApiOperation({ summary: "Login — define cookie HttpOnly com JWT" })
     @ApiBody({ type: LoginDto })
-    async login(@Body() body: LoginDto) {
+    async login(
+        @Body() body: LoginDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
         validatePayload(body as unknown as Record<string, unknown>, ["login", "password"], true);
-        return this.authService.login(body as unknown as payload.login);
+        const result = await this.authService.login(body as unknown as payload.login);
+        res.cookie(COOKIE_NAME, result.access_token, cookieOptions());
+        return { user: result.user };
     }
 
     @Post("/refresh")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth("bearer")
-    @ApiOperation({ summary: "Renova o token JWT (sliding session)" })
-    async refresh(@Req() req: Request) {
-        return this.authService.refresh(req.user as { id: number; email: string; role: string });
+    @ApiOperation({ summary: "Renova o JWT (sliding session) — redefine o cookie" })
+    async refresh(
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const result = await this.authService.refresh(
+            req.user as { id: number; email: string; role?: string | null; roleId?: number | null; modules?: string[]; companyId?: number | null },
+        );
+        res.cookie(COOKIE_NAME, result.access_token, cookieOptions());
+        return { message: "Token renovado" };
     }
 
-    @Post("/users")
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles("admin")
+    @Post("/logout")
+    @UseGuards(JwtAuthGuard)
     @ApiBearerAuth("bearer")
-    @ApiOperation({ summary: "Criar usuario (apenas admin)" })
-    @ApiBody({ type: CreateUserDto })
-    async createUser(@Body() body: CreateUserDto) {
-        validatePayload(body as unknown as Record<string, unknown>, ["email", "name", "surname", "role"], true);
-        return this.authService.createUser(body as unknown as payload.createUser);
+    @ApiOperation({ summary: "Logout — limpa o cookie JWT e revoga o token" })
+    async logout(
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const user = req.user as { jti?: string | null; exp?: number | null } | undefined;
+        if (user?.jti && user?.exp) {
+            const ttl = Math.max(0, user.exp - Math.floor(Date.now() / 1000));
+            if (ttl > 0) await this.blocklist.revoke(user.jti, ttl);
+        }
+        res.clearCookie(COOKIE_NAME, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        });
+        return { message: "Logout realizado com sucesso" };
     }
 }

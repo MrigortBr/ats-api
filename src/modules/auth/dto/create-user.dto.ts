@@ -1,29 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-
-export class CreateUserDto {
-    @ApiProperty({ example: "Joao" })
-    name!: string;
-
-    @ApiProperty({ example: "Silva" })
-    surname!: string;
-
-    @ApiProperty({ example: "joao@saude.gov.br" })
-    email!: string;
-
-    @ApiProperty({ example: "senha123", required: false, description: "Se omitido, gerado automaticamente: NomeSobrenome + 3 digitos" })
-    password?: string;
-
-    @ApiProperty({
-        enum: ["admin", "gestor_transporte", "gestor_tomo", "gestor_all", "gestor_all_combo", "visualizador_transporte", "visualizador_tomo", "visualizador_all"],
-        example: "gestor_transporte",
-    })
-    role!: string;
-}
+import { IsNotEmpty, IsString } from "class-validator";
 
 export class LoginDto {
     @ApiProperty({ example: "usuario@saude.gov.br" })
+    @IsString() @IsNotEmpty()
     login!: string;
 
     @ApiProperty({ example: "senha123" })
+    @IsString() @IsNotEmpty()
     password!: string;
 }

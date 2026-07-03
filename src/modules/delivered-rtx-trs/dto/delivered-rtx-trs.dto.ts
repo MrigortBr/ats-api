@@ -1,7 +1,8 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { IsNumber, IsOptional } from "class-validator";
 
 export class UpdateDeliveredRtxTrsDto {
-    @ApiPropertyOptional() van?: number;
-    @ApiPropertyOptional() ambulance?: number;
-    @ApiPropertyOptional() minibus?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() van?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() ambulance?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() minibus?: number;
 }

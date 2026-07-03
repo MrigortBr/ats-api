@@ -1,3 +1,4 @@
+import { SkipThrottle } from "@nestjs/throttler";
 import { Controller, Get, Param, ParseIntPipe, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ConsolidadoService } from "./consolidado.service";
@@ -13,6 +14,7 @@ const EXAMPLE = {
 @ApiTags("Consolidado")
 @ApiBearerAuth("bearer")
 @UseGuards(JwtAuthGuard)
+@SkipThrottle()
 @Controller("/consolidado")
 export class ConsolidadoController {
     constructor(private readonly service: ConsolidadoService) {}

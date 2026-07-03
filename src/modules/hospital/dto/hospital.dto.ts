@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsString, IsOptional, IsNumber, IsArray, IsNotEmpty, IsIn, IsBoolean, ValidateNested } from "class-validator";
+import { IsString, IsOptional, IsNumber, IsArray, IsNotEmpty, IsIn, IsBoolean, IsInt, ValidateNested, ArrayMaxSize, ArrayMinSize } from "class-validator";
 import { Type } from "class-transformer";
 
 export class UpdateHospitalTomoDto {
@@ -68,8 +68,24 @@ export class UpdateHospitalComboDto {
     @ApiPropertyOptional({ enum: ["COMBO CIRURGIA", "COMBO OFTALMO"] }) @IsOptional() @IsString() comboType?: string;
     @ApiPropertyOptional() @IsOptional() @IsString() contract?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryParcel?: string | null;
+    // Datas
+    @ApiPropertyOptional() @IsOptional() @IsString() expeditionDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() deliveryForecast?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() installationDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() trainingDate?: string | null;
+    // Situação / Equipamentos
+    @ApiPropertyOptional() @IsOptional() @IsString() deliveryStatus?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsInt() equipmentCount?: number | null;
     @ApiPropertyOptional() @IsOptional() @IsString() notes?: string | null;
+    // Contato
+    @ApiPropertyOptional() @IsOptional() @IsString() address?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() managerData?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() managerPhone?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() focalPointData?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() focalPointPhone?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() focalPointEmail?: string | null;
+    // Hospital base
     @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() cnpj?: string | null;
 }
@@ -83,12 +99,27 @@ export class CreateHospitalComboDto {
 
     @ApiPropertyOptional() @IsOptional() @IsString() contract?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryParcel?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() expeditionDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() deliveryForecast?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() installationDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() trainingDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() deliveryStatus?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsInt() equipmentCount?: number | null;
     @ApiPropertyOptional() @IsOptional() @IsString() notes?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() address?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() managerData?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() managerPhone?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() focalPointData?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() focalPointPhone?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() focalPointEmail?: string | null;
 }
 
 export class BulkCreateHospitalDto {
-    @ApiProperty({ description: "Array de CNES para importação em massa", type: [String] })
+    @ApiProperty({ description: "Array de CNES para importação em massa (máx 50)", type: [String], maxItems: 50 })
     @IsArray()
+    @ArrayMinSize(1)
+    @ArrayMaxSize(50)
+    @IsString({ each: true })
     cnesList!: string[];
 }

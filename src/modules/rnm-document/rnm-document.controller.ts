@@ -2,13 +2,14 @@ import {
     Controller, Delete, Get, Param, Post,
     Req, StreamableFile, UploadedFile, UseGuards, UseInterceptors,
 } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { RnmDocumentService } from "./rnm-document.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
-import { Roles } from "../auth/decorators/roles.decorator";
+import { ModuleGuard } from "../auth/guards/module.guard";
+import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 
 interface MulterFile {
     fieldname: string;
@@ -21,7 +22,9 @@ interface MulterFile {
 
 @ApiTags("RNM Documents")
 @ApiBearerAuth("bearer")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ModuleGuard)
+@RequiresModule("tomo")
+@SkipThrottle()
 @Controller("/rnm-doc")
 export class RnmDocumentController {
     constructor(private readonly service: RnmDocumentService) {}
@@ -29,11 +32,16 @@ export class RnmDocumentController {
     // ── Upload ────────────────────────────────────────────────────────────────
 
     @Post(":hospitalId")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor_tomo", "gestor_all", "gestor_all_combo")
-    @UseInterceptors(FileInterceptor("file", {
+        @UseInterceptors(FileInterceptor("file", {
         limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
-        fileFilter: (_req, _file, cb) => cb(null, true), // aceita qualquer tipo
+        fileFilter: (_req, file, cb) => {
+            const allowed = [
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ];
+            cb(null, allowed.includes(file.mimetype));
+        },
     }))
     @ApiConsumes("multipart/form-data")
     @ApiOperation({ summary: "Upload de formulário RNM para um hospital" })
@@ -70,9 +78,7 @@ export class RnmDocumentController {
     // ── Delete ────────────────────────────────────────────────────────────────
 
     @Delete(":id")
-    @UseGuards(RolesGuard)
-    @Roles("admin", "gestor_tomo", "gestor_all", "gestor_all_combo")
-    @ApiOperation({ summary: "Deletar um formulário RNM pelo ID" })
+        @ApiOperation({ summary: "Deletar um formulário RNM pelo ID" })
     async delete(@Param("id") id: string) {
         await this.service.delete(Number(id));
         return { message: "Documento removido com sucesso" };

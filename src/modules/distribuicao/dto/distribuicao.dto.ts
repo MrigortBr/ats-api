@@ -1,19 +1,21 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
 
 export class UpdateDistribuicaoRtxDto {
-    @ApiPropertyOptional() van?: number;
-    @ApiPropertyOptional() ambulance?: number;
-    @ApiPropertyOptional() minibus?: number;
-    @ApiPropertyOptional() observation?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() van?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() ambulance?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() minibus?: number;
+    @ApiPropertyOptional() @IsOptional() @IsString() observation?: string | null;
 }
 
 export class UpdateDistribuicaoTrsDto {
-    @ApiPropertyOptional() van?: number;
-    @ApiPropertyOptional() microbus?: number;
-    @ApiPropertyOptional() observation?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() van?: number;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() microbus?: number;
+    @ApiPropertyOptional() @IsOptional() @IsString() observation?: string | null;
 }
 
 export class UpdateDistribuicaoDto {
-    @ApiPropertyOptional() rtx?: UpdateDistribuicaoRtxDto;
-    @ApiPropertyOptional() trs?: UpdateDistribuicaoTrsDto;
+    @ApiPropertyOptional() @IsOptional() @ValidateNested() @Type(() => UpdateDistribuicaoRtxDto) rtx?: UpdateDistribuicaoRtxDto;
+    @ApiPropertyOptional() @IsOptional() @ValidateNested() @Type(() => UpdateDistribuicaoTrsDto) trs?: UpdateDistribuicaoTrsDto;
 }

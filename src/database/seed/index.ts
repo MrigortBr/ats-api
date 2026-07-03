@@ -248,7 +248,7 @@ async function seed() {
     const existing = await userRepo.findOne({ where: { email: adminEmail } });
     if (!existing) {
         const hashed = await bcrypt.hash("Admin@123", hashAmount);
-        await userRepo.save(userRepo.create({ name: "Administrador", surname: "ATS", email: adminEmail, password: hashed, role: "admin" }));
+        await userRepo.save(userRepo.create({ name: "Administrador", surname: "ATS", email: adminEmail, password: hashed }));
         console.log("  + Usuario admin criado  ->  admin@ats.gov.br / Admin@123");
     } else {
         console.log("  - Usuario admin ja existe, pulando.");
@@ -362,7 +362,6 @@ async function seed() {
                     surname: u.surname,
                     email,
                     password: hashed,
-                    role: u.role,
                 }));
                 if (process.env.SEND_EMAIL !== "false") {
                     await sendCredentialsEmail({

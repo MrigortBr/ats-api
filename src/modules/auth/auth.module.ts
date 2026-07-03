@@ -7,12 +7,17 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { AuthRepository } from "./auth.repository";
 import { JwtStrategy } from "./strategies/jwt.strategy";
-import { RolesGuard } from "./guards/roles.guard";
+import { ModuleGuard } from "./guards/module.guard";
 import { Users } from "./entities/user.entity";
+import { Role } from "../role/entities/role.entity";
+import { RoleModule as RoleModuleEntity } from "../role/entities/role-module.entity";
+import { RedisModule } from "../redis/redis.module";
+import { TokenBlocklistService } from "./services/token-blocklist.service";
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Users]),
+        RedisModule,
+        TypeOrmModule.forFeature([Users, Role, RoleModuleEntity]),
         PassportModule,
         JwtModule.registerAsync({
             useFactory: () => ({
@@ -22,7 +27,7 @@ import { Users } from "./entities/user.entity";
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, AuthRepository, JwtStrategy, RolesGuard, Reflector],
-    exports: [JwtModule, PassportModule, RolesGuard, Reflector],
+    providers: [AuthService, AuthRepository, JwtStrategy, ModuleGuard, Reflector, TokenBlocklistService],
+    exports: [JwtModule, PassportModule, ModuleGuard, Reflector],
 })
 export class AuthModule {}

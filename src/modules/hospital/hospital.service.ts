@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, DataSource } from "typeorm";
+import { Repository, DataSource, IsNull } from "typeorm";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
@@ -395,7 +395,9 @@ export class HospitalService {
 
     async findAllCombo(companyId?: number | null) {
         return this.comboRepo.find({
-            where: companyId ? { companyId } : undefined,
+            // Registros com company_id = NULL são "globais" — visíveis para todos.
+            // Usuários com empresa veem seus registros + os globais.
+            where: companyId ? [{ companyId }, { companyId: IsNull() }] : undefined,
             relations: { hospital: { uf: true } },
             order: { hospital: { uf: { uf: "ASC" }, name: "ASC" }, comboType: "ASC" },
         });
@@ -404,7 +406,10 @@ export class HospitalService {
     async findComboByUf(ufSigla: string, companyId?: number | null) {
         return this.comboRepo.find({
             where: companyId
-                ? { hospital: { uf: { uf: ufSigla } }, companyId }
+                ? [
+                    { hospital: { uf: { uf: ufSigla } }, companyId },
+                    { hospital: { uf: { uf: ufSigla } }, companyId: IsNull() },
+                ]
                 : { hospital: { uf: { uf: ufSigla } } },
             relations: { hospital: { uf: true } },
             order: { hospital: { name: "ASC" }, comboType: "ASC" },

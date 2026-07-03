@@ -13,10 +13,13 @@ const COOKIE_NAME = "jwt";
 const COOKIE_MAX_AGE = 30 * 60 * 1000; // 30 min — deve casar com JWT_EXPIRES_IN
 
 function cookieOptions() {
+    const isProd = process.env.NODE_ENV === "production";
     return {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict" as const,
+        secure: isProd,
+        // "none" é obrigatório quando API e frontend estão em domínios diferentes (cross-site).
+        // Requer secure=true em produção; em dev (localhost) usa "lax" para funcionar sem HTTPS.
+        sameSite: (isProd ? "none" : "lax") as "none" | "lax",
         maxAge: COOKIE_MAX_AGE,
     };
 }
@@ -71,10 +74,11 @@ export class AuthController {
             const ttl = Math.max(0, user.exp - Math.floor(Date.now() / 1000));
             if (ttl > 0) await this.blocklist.revoke(user.jti, ttl);
         }
+        const isProd = process.env.NODE_ENV === "production";
         res.clearCookie(COOKIE_NAME, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
         });
         return { message: "Logout realizado com sucesso" };
     }

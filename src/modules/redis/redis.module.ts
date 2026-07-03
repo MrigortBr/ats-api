@@ -14,14 +14,18 @@ export const REDIS_CLIENT = "REDIS_CLIENT";
         {
             provide: REDIS_CLIENT,
             useFactory: () => {
+                const hasExplicitUrl = !!process.env.REDIS_URL;
                 const client = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
                     lazyConnect: true,
                     enableOfflineQueue: false,
                     maxRetriesPerRequest: 1,
+                    // Em dev sem REDIS_URL: tenta 1x e desiste (sem flood de logs)
+                    retryStrategy: (times) => (hasExplicitUrl ? Math.min(times * 500, 5000) : null),
                 });
-                client.on("error", (err) =>
-                    console.warn("[Redis] erro de conexão:", (err as Error).message),
-                );
+                client.on("error", (err) => {
+                    // Loga apenas se REDIS_URL foi configurada -- falha inesperada
+                    if (hasExplicitUrl) console.warn("[Redis] erro de conexao:", (err as Error).message);
+                });
                 return client;
             },
         },

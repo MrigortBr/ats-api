@@ -7,6 +7,7 @@ import { ResponseInterceptor } from "./common/interceptors/response.interceptor"
 import { HttpCacheInterceptor } from "./common/interceptors/cache.interceptor";
 import compression from "compression";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -14,18 +15,28 @@ dotenv.config();
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
-    // Compressão gzip — reduz payload em ~70% (crítico pra mobile)
+    // Headers de seguranca HTTP (X-Frame-Options, HSTS, X-Content-Type-Options, etc.)
+    app.use(helmet({
+        // CSP desativado aqui -- frontend Next.js controla o proprio CSP
+        contentSecurityPolicy: false,
+    }));
+
+    // Compressao gzip -- reduz payload em ~70% (critico pra mobile)
     app.use(compression({ level: 6, threshold: 1024 }));
 
-    // Parse de cookies HttpOnly (necessário para autenticação via cookie)
+    // Parse de cookies HttpOnly (necessario para autenticacao via cookie)
     app.use(cookieParser());
 
+    const corsOrigin = process.env.CORS_ORIGIN;
+    if (!corsOrigin && process.env.NODE_ENV === "production") {
+        throw new Error("CORS_ORIGIN nao definida em producao -- configure o arquivo .env");
+    }
     app.enableCors({
-        origin: process.env.CORS_ORIGIN ?? "*",
+        origin: corsOrigin ?? "http://localhost:3000",
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
-        credentials: true, // obrigatório para envio de cookies cross-origin
-        maxAge: 86400, // preflight cache por 24h — elimina OPTIONS request repetido
+        credentials: true,
+        maxAge: 86400,
     });
 
     app.useGlobalFilters(new HttpExceptionFilter());
@@ -36,19 +47,20 @@ async function bootstrap() {
         transform: true,
     }));
 
-    // Keep-Alive — reutiliza conexões TCP (importante pra mobile com latência alta)
+    // Keep-Alive -- reutiliza conexoes TCP
     const server = app.getHttpServer();
     server.keepAliveTimeout = 65_000;
     server.headersTimeout   = 66_000;
 
-    if (process.env.SWAGGER_ENABLED !== "false") {
+    // Swagger -- desabilitado por padrao; ative com SWAGGER_ENABLED=true no .env
+    if (process.env.SWAGGER_ENABLED === "true") {
         const config = new DocumentBuilder()
             .setTitle("ATS API")
             .setDescription(
-                "Acompanhamento do Transporte Sanitário — Lei 15.233/2025\n\n" +
-                "**Todas as respostas** são embrulhadas pelo ResponseInterceptor:\n" +
+                "Acompanhamento do Transporte Sanitario -- Lei 15.233/2025\n\n" +
+                "**Todas as respostas** sao embrulhadas pelo ResponseInterceptor:\n" +
                 "```json\n{ \"timestamp\": \"...\", \"message\": \"OK\", \"data\": <payload> }\n```\n\n" +
-                "Use o botão **Authorize** para inserir o JWT obtido em POST /auth/login."
+                "Use o botao **Authorize** para inserir o JWT obtido em POST /auth/login."
             )
             .setVersion("1.0")
             .addBearerAuth(
@@ -56,7 +68,6 @@ async function bootstrap() {
                 "bearer",
             )
             .build();
-
         const document = SwaggerModule.createDocument(app, config);
         SwaggerModule.setup("docs", app, document);
     }
@@ -67,9 +78,11 @@ async function bootstrap() {
     const logger = new Logger();
     logger.log("");
     logger.log("-=-=-=-=- ATS API -=-=-=-=-");
-    logger.log(`✓ Ready in ${process.uptime().toFixed(1)}s`);
-    logger.log(`➜ Local:   http://localhost:${port}`);
-    logger.log(`➜ Swagger: http://localhost:${port}/docs`);
+    logger.log(`Ready in ${process.uptime().toFixed(1)}s`);
+    logger.log(`Local:   http://localhost:${port}`);
+    if (process.env.SWAGGER_ENABLED === "true") {
+        logger.log(`Swagger: http://localhost:${port}/docs`);
+    }
     logger.log("-=-=-=-=--=-=-=-=--=-=-=-=-");
 }
 

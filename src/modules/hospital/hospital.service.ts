@@ -164,9 +164,12 @@ export class HospitalService {
     ): Promise<Hospital> {
         const external = await this.fetchCnes(cnes);
 
+        // withDeleted: true para detectar registros soft-deleted e restaura-los
+        // em vez de tentar criar novo (violaria unique constraint em hospital_id)
         const existing = await this.hospitalRepo.findOne({
             where: { cnes: external.cnes },
             relations: { tomo: true, rnm: true },
+            withDeleted: true,
         });
 
         return this.dataSource.transaction(async (em) => {
@@ -188,13 +191,22 @@ export class HospitalService {
                 hospitalId = existing.id;
             }
 
-            if (module === "tomo" && !existing?.tomo) {
-                await em.save(HospitalTomo, em.create(HospitalTomo, {
-                    hospitalId,
-                    ...(initialTomo ?? {}),
-                }));
-            } else if (module === "rnm" && !existing?.rnm) {
-                await em.save(HospitalRnm, em.create(HospitalRnm, { hospitalId }));
+            if (module === "tomo") {
+                if (existing?.tomo?.deletedAt) {
+                    // Restaura registro soft-deleted em vez de criar novo
+                    await em.restore(HospitalTomo, { hospitalId });
+                } else if (!existing?.tomo) {
+                    await em.save(HospitalTomo, em.create(HospitalTomo, {
+                        hospitalId,
+                        ...(initialTomo ?? {}),
+                    }));
+                }
+            } else if (module === "rnm") {
+                if (existing?.rnm?.deletedAt) {
+                    await em.restore(HospitalRnm, { hospitalId });
+                } else if (!existing?.rnm) {
+                    await em.save(HospitalRnm, em.create(HospitalRnm, { hospitalId }));
+                }
             }
 
             return em.findOneOrFail(Hospital, { where: { id: hospitalId } });
@@ -425,8 +437,7 @@ export class HospitalService {
         const record = await this.rnmRepo.findOne({ where: { hospitalId }, relations: { hospital: { uf: true } } });
         if (!record) throw new NotFoundException(`Registro RNM para hospital ${hospitalId} não encontrado`);
 
-        const { cnes, gestao, naturezaJuridica, ...rnmData } = data;
-        Object.assign(record, rnmData);
+        const { cnes, gestao, naturezaJuridica, ...rnmData } = data;Object.assign(record, rnmData);
 
         let hospitalChanged = false;
         if (cnes !== undefined) {

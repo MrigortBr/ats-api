@@ -8,12 +8,18 @@ interface JwtUser {
     email: string;
     roleId: number | null;
     modules: string[];
+    writeModules: string[];
     companyId: number | null;
 }
 
+/** Metodos HTTP que alteram estado -- exigem canWrite no modulo. */
+const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
 /**
- * Guard que verifica se o JWT do usuário contém o módulo exigido pelo endpoint.
- * Deve ser usado APÓS JwtAuthGuard.
+ * Guard que verifica se o JWT do usuario tem acesso ao modulo exigido.
+ * - Leitura (GET/HEAD): basta o modulo estar em modules[].
+ * - Escrita (POST/PUT/PATCH/DELETE): o modulo tambem deve estar em writeModules[].
+ * Deve ser usado APOS JwtAuthGuard.
  */
 @Injectable()
 export class ModuleGuard implements CanActivate {
@@ -25,20 +31,27 @@ export class ModuleGuard implements CanActivate {
             [context.getHandler(), context.getClass()],
         );
 
-        // Sem decorator → rota pública (ou protegida só por JWT)
         if (!requiredModule) return true;
 
-        const request = context.switchToHttp().getRequest<{ user?: JwtUser }>();
+        const request = context.switchToHttp().getRequest<{ user?: JwtUser; method: string }>();
         const user = request.user;
 
-        if (!user) throw new ForbiddenException("Usuário não autenticado");
+        if (!user) throw new ForbiddenException("Usuario nao autenticado");
 
         const hasModule = Array.isArray(user.modules) && user.modules.includes(requiredModule);
-
         if (!hasModule) {
             throw new ForbiddenException(
-                `Acesso negado: módulo '${requiredModule}' não disponível para este usuário`,
+                `Acesso negado: modulo '${requiredModule}' nao disponivel para este usuario`,
             );
+        }
+
+        if (WRITE_METHODS.has(request.method)) {
+            const canWrite = Array.isArray(user.writeModules) && user.writeModules.includes(requiredModule);
+            if (!canWrite) {
+                throw new ForbiddenException(
+                    `Permissao de escrita ausente: modulo '${requiredModule}' e somente leitura para este usuario`,
+                );
+            }
         }
 
         return true;

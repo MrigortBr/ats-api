@@ -21,7 +21,11 @@ import { TokenBlocklistService } from "./services/token-blocklist.service";
         PassportModule,
         JwtModule.registerAsync({
             useFactory: () => ({
-                secret: process.env.JWT_SECRET ?? "default_secret",
+                secret: (() => {
+                        const s = process.env.JWT_SECRET;
+                        if (!s) throw new Error("JWT_SECRET não definida — configure o arquivo .env");
+                        return s;
+                    })(),
                 signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN ?? "30m") as any },
             }),
         }),

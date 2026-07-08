@@ -115,6 +115,64 @@ export class CreateHospitalComboDto {
     @ApiPropertyOptional() @IsOptional() @IsString() focalPointEmail?: string | null;
 }
 
+export class CreateComboEquipamentoDto {
+    @ApiProperty({ description: "ID do combo (hospital_combo.id)" })
+    @IsInt() comboId!: number;
+
+    @ApiProperty() @IsString() @IsNotEmpty() equipmentName!: string;
+
+    @ApiPropertyOptional() @IsOptional() @IsString() comboCode?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() serialNumber?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() company?: string | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() nfSent?: boolean | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() nfNumber?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() nfSentDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() nfValue?: number | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() provisionalReceiptSent?: boolean | null;
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() finalReceiptSent?: boolean | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsNumber() payment1Value?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment1Nup?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment1SentDate?: string | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsNumber() payment2Value?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment2Nup?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment2SentDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment2Deadline?: string | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsNumber() totalPaid?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() paymentStatus?: string | null;
+}
+
+export class UpdateComboEquipamentoDto {
+    @ApiPropertyOptional() @IsOptional() @IsString() equipmentName?: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() comboCode?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() serialNumber?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() company?: string | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() nfSent?: boolean | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() nfNumber?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() nfSentDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() nfValue?: number | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() provisionalReceiptSent?: boolean | null;
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() finalReceiptSent?: boolean | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsNumber() payment1Value?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment1Nup?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment1SentDate?: string | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsNumber() payment2Value?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment2Nup?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment2SentDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() payment2Deadline?: string | null;
+
+    @ApiPropertyOptional() @IsOptional() @IsNumber() totalPaid?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() paymentStatus?: string | null;
+}
+
 export class BulkCreateHospitalDto {
     @ApiProperty({ description: "Array de CNES para importação em massa (máx 50)", type: [String], maxItems: 50 })
     @IsArray()

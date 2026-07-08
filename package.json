@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
-    "start": "nest start",
+    "dev": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "migration:generate": "npx typeorm-ts-node-commonjs migration:generate src/database/migrations/NAME_MIGRATION -d src/database/data-source.cli.ts",

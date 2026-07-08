@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, 
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { HospitalService } from "./hospital.service";
-import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto } from "./dto/hospital.dto";
+import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto, CreateComboEquipamentoDto, UpdateComboEquipamentoDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
@@ -139,6 +139,42 @@ export class HospitalController {
     @HttpCode(204)
     @ApiOperation({ summary: "Inativar registro COMBO (soft delete)" })
     softDeleteCombo(@Param("id") id: string) { return this.service.softDeleteCombo(Number(id)); }
+
+    // ── Combo Equipamento ─────────────────────────────────────────────────────
+
+    @Get("combo-equipamento")
+    @RequiresModule("combo")
+    @ApiOperation({ summary: "Listar todos os equipamentos (lista global)" })
+    findAllEquipamentos(@Req() req: AuthRequest) {
+        return this.service.findAllEquipamentos(req.user?.companyId);
+    }
+
+    @Post("combo-equipamento")
+    @RequiresModule("combo")
+    @ApiOperation({ summary: "Criar equipamento de um combo" })
+    createEquipamento(@Body() dto: CreateComboEquipamentoDto) {
+        return this.service.createEquipamento(dto);
+    }
+
+    @Get("combo/:id/equipamentos")
+    @RequiresModule("combo")
+    @ApiOperation({ summary: "Listar equipamentos de um combo" })
+    findEquipamentosByCombo(@Param("id") id: string) {
+        return this.service.findEquipamentosByCombo(Number(id));
+    }
+
+    @Put("combo-equipamento/:id")
+    @RequiresModule("combo")
+    @ApiOperation({ summary: "Atualizar equipamento" })
+    updateEquipamento(@Param("id") id: string, @Body() dto: UpdateComboEquipamentoDto) {
+        return this.service.updateEquipamento(Number(id), dto);
+    }
+
+    @Delete("combo-equipamento/:id")
+    @RequiresModule("combo")
+    @HttpCode(204)
+    @ApiOperation({ summary: "Inativar equipamento (soft delete)" })
+    softDeleteEquipamento(@Param("id") id: string) { return this.service.softDeleteEquipamento(Number(id)); }
 
     // ── Hard delete hospital (admin) ──────────────────────────────────────────
 

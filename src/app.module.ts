@@ -24,6 +24,7 @@ import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
 import { CotaGeralMunicipioModule } from "./modules/cota-geral-municipio/cota-geral-municipio.module";
 import { CompanyModule } from "./modules/company/company.module";
 import { RoleModule } from "./modules/role/role.module";
+import { EmpresaModule } from "./modules/empresa/empresa.module";
 
 @Module({
     controllers: [AppController],
@@ -59,6 +60,8 @@ import { RoleModule } from "./modules/role/role.module";
         // RBAC / Multi-tenant
         CompanyModule,
         RoleModule,
+        // Empresa
+        EmpresaModule,
     ],
 })
 export class AppModule {}

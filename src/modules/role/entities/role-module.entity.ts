@@ -11,7 +11,7 @@ import { Role } from "./role.entity";
  * Módulos disponíveis no sistema.
  * Cada linha representa a permissão de um módulo para uma role.
  */
-export type ModuleName = "transporte" | "tomo" | "rnm" | "combo" | "admin";
+export type ModuleName = "transporte" | "tomo" | "rnm" | "combo" | "admin" | "empresa";
 
 @Entity("role_modules")
 export class RoleModule {

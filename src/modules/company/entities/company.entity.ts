@@ -18,6 +18,9 @@ export class Company {
     @Column({ type: "varchar", nullable: true })
     cnpj!: string | null;
 
+    @Column({ type: "varchar", length: 20, nullable: true })
+    abbreviation!: string | null;
+
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
 

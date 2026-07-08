@@ -5,8 +5,9 @@ import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
 import { HospitalCombo } from "./entities/hospital-combo.entity";
+import { ComboEquipamento } from "./entities/combo-equipamento.entity";
 import { Uf } from "../uf/entities/uf.entity";
-import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto } from "./dto/hospital.dto";
+import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto, CreateComboEquipamentoDto, UpdateComboEquipamentoDto } from "./dto/hospital.dto";
 
 const DEMAS_BASE = "https://apidadosabertos.saude.gov.br/cnes";
 const IBGE_BASE  = "https://servicodados.ibge.gov.br/api/v1/localidades";
@@ -53,6 +54,8 @@ export class HospitalService {
         private readonly rnmRepo: Repository<HospitalRnm>,
         @InjectRepository(HospitalCombo)
         private readonly comboRepo: Repository<HospitalCombo>,
+        @InjectRepository(ComboEquipamento)
+        private readonly equipamentoRepo: Repository<ComboEquipamento>,
         @InjectRepository(Uf)
         private readonly ufRepo: Repository<Uf>,
         private readonly dataSource: DataSource,
@@ -398,7 +401,7 @@ export class HospitalService {
             // Registros com company_id = NULL são "globais" — visíveis para todos.
             // Usuários com empresa veem seus registros + os globais.
             where: companyId ? [{ companyId }, { companyId: IsNull() }] : undefined,
-            relations: { hospital: { uf: true } },
+            relations: { hospital: { uf: true }, company: true },
             order: { hospital: { uf: { uf: "ASC" }, name: "ASC" }, comboType: "ASC" },
         });
     }
@@ -411,7 +414,7 @@ export class HospitalService {
                     { hospital: { uf: { uf: ufSigla } }, companyId: IsNull() },
                 ]
                 : { hospital: { uf: { uf: ufSigla } } },
-            relations: { hospital: { uf: true } },
+            relations: { hospital: { uf: true }, company: true },
             order: { hospital: { name: "ASC" }, comboType: "ASC" },
         });
     }
@@ -434,6 +437,50 @@ export class HospitalService {
         if (hospitalChanged) await this.hospitalRepo.save(record.hospital);
 
         return this.comboRepo.save(record);
+    }
+
+    // ── COMBO EQUIPAMENTO ─────────────────────────────────────────────────────
+
+    async createEquipamento(dto: CreateComboEquipamentoDto): Promise<ComboEquipamento> {
+        const combo = await this.comboRepo.findOne({ where: { id: dto.comboId } });
+        if (!combo) throw new NotFoundException(`Combo ${dto.comboId} não encontrado`);
+        const equipamento = this.equipamentoRepo.create(dto);
+        return this.equipamentoRepo.save(equipamento);
+    }
+
+    async findAllEquipamentos(companyId?: number | null): Promise<(ComboEquipamento & { establishmentCode: string | null })[]> {
+        const items = await this.equipamentoRepo.find({
+            where: companyId
+                ? [{ combo: { companyId } }, { combo: { companyId: IsNull() } }]
+                : undefined,
+            relations: { combo: { hospital: { uf: true }, company: true } },
+            order: { combo: { hospital: { uf: { uf: "ASC" }, name: "ASC" } }, id: "ASC" },
+        });
+        return items.map(e => Object.assign(e, {
+            establishmentCode: e.combo?.hospital?.cnes != null && e.combo?.comboType
+                ? `${e.combo.hospital.cnes}_${e.combo.comboType}_${e.combo.contract ?? ''}`
+                : null,
+        }));
+    }
+
+    async findEquipamentosByCombo(comboId: number): Promise<ComboEquipamento[]> {
+        return this.equipamentoRepo.find({
+            where: { comboId },
+            order: { id: "ASC" },
+        });
+    }
+
+    async updateEquipamento(id: number, data: UpdateComboEquipamentoDto): Promise<ComboEquipamento> {
+        const record = await this.equipamentoRepo.findOne({ where: { id } });
+        if (!record) throw new NotFoundException(`Equipamento ${id} não encontrado`);
+        Object.assign(record, data);
+        return this.equipamentoRepo.save(record);
+    }
+
+    async softDeleteEquipamento(id: number): Promise<void> {
+        const record = await this.equipamentoRepo.findOne({ where: { id } });
+        if (!record) throw new NotFoundException(`Equipamento ${id} não encontrado`);
+        await this.equipamentoRepo.softDelete(id);
     }
 
     // ── UPDATE RNM ────────────────────────────────────────────────────────────

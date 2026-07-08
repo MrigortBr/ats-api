@@ -16,4 +16,7 @@ export class Uf {
 
     @Column({ type: "varchar", nullable: true })
     cib!: string | null;
+
+    @Column({ type: "varchar", nullable: true })
+    region!: string | null;
 }

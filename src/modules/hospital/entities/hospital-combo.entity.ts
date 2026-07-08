@@ -5,11 +5,13 @@ import {
     Entity,
     JoinColumn,
     ManyToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
 import { Hospital } from "./hospital.entity";
 import { Company } from "../../company/entities/company.entity";
+import { ComboEquipamento } from "./combo-equipamento.entity";
 
 @Entity("hospital_combo")
 export class HospitalCombo {
@@ -80,6 +82,9 @@ export class HospitalCombo {
     @Column({ name: "focal_point_email", type: "varchar", nullable: true })
     focalPointEmail!: string | null;
 
+    @Column({ name: "establishment_email", type: "varchar", nullable: true })
+    establishmentEmail!: string | null;
+
     // Multi-tenant
 
     @Column({ name: "company_id", type: "integer", nullable: true })
@@ -94,6 +99,9 @@ export class HospitalCombo {
 
     @UpdateDateColumn({ name: "updated_at", nullable: true })
     updatedAt!: Date | null;
+
+    @OneToMany(() => ComboEquipamento, (e) => e.combo, { cascade: false })
+    equipamentos!: ComboEquipamento[];
 
     @DeleteDateColumn({ name: "deleted_at", nullable: true })
     deletedAt!: Date | null;

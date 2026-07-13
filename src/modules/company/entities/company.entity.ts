@@ -21,6 +21,10 @@ export class Company {
     @Column({ type: "varchar", length: 20, nullable: true })
     abbreviation!: string | null;
 
+    /** Nome fantasia ou razão social. */
+    @Column({ name: "trade_name", type: "varchar", nullable: true })
+    tradeName!: string | null;
+
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
 

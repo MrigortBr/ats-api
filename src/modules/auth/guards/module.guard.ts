@@ -38,6 +38,9 @@ export class ModuleGuard implements CanActivate {
 
         if (!user) throw new ForbiddenException("Usuario nao autenticado");
 
+        // Admin é superusuário — acessa qualquer módulo sem restrição de leitura ou escrita.
+        if (Array.isArray(user.modules) && user.modules.includes("admin")) return true;
+
         const hasModule = Array.isArray(user.modules) && user.modules.includes(requiredModule);
         if (!hasModule) {
             throw new ForbiddenException(

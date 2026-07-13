@@ -4,14 +4,12 @@ import {
     Entity,
     JoinColumn,
     ManyToOne,
-    OneToMany,
     OneToOne,
     PrimaryGeneratedColumn,
 } from "typeorm";
 import { Uf } from "../../uf/entities/uf.entity";
 import { HospitalTomo } from "./hospital-tomo.entity";
 import { HospitalRnm } from "./hospital-rnm.entity";
-import { HospitalCombo } from "./hospital-combo.entity";
 
 @Entity("hospital")
 export class Hospital {
@@ -55,6 +53,4 @@ export class Hospital {
     @OneToOne(() => HospitalRnm, (r) => r.hospital)
     rnm!: HospitalRnm | null;
 
-    @OneToMany(() => HospitalCombo, (c) => c.hospital)
-    combos!: HospitalCombo[];
 }

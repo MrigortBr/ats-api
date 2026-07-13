@@ -2,9 +2,9 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateEmpresaProblemDto {
-    @ApiProperty()
+    @ApiProperty({ description: "ID do combo_consult" })
     @IsInt()
-    comboId!: number;
+    consultId!: number;
 
     @ApiPropertyOptional() @IsOptional() @IsString() queixa?: string;
     @ApiPropertyOptional() @IsOptional() @IsString() motivoUnidade?: string;
@@ -65,14 +65,16 @@ export class UpdateAdminContatoDto extends UpdateEmpresaContatoDto {
     @ApiPropertyOptional() @IsOptional() @IsInt()     equipmentCount?:   number | null;
 }
 
+// "Adicionar equipamento" = criar novo row em combo_consult copiando
+// dados do estabelecimento de um row existente (consultId como template)
 export class CreateAdminEquipamentoDto {
-    @ApiProperty()  @IsInt()                          comboId!:          number;
+    @ApiProperty({ description: "ID de um combo_consult do mesmo estabelecimento (template)" })
+    @IsInt() consultId!: number;
+
     @ApiProperty()  @IsString() @IsNotEmpty()         equipmentName!:    string;
 
     @ApiPropertyOptional() @IsOptional() @IsString()  comboCode?:               string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  serialNumber?:            string | null;
-    @ApiPropertyOptional() @IsOptional() @IsString()  contract?:                string | null;
-    @ApiPropertyOptional() @IsOptional() @IsString()  deliveryParcel?:          string | null;
 
     @ApiPropertyOptional() @IsOptional() @IsBoolean() nfSent?:                  boolean | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  nfNumber?:                string | null;
@@ -93,14 +95,20 @@ export class CreateAdminEquipamentoDto {
     @ApiPropertyOptional() @IsOptional() @IsString()  paymentStatus?:    string | null;
 }
 
-// Cria hospital_combo + combo_equipamento em uma única operação
+// Cria um único row em combo_consult (modelo flat)
 export class CreateComboCompletoDto {
-    // Combo (hospital_combo)
-    @ApiProperty()  @IsInt()                          hospitalId!:       number;
-    @ApiPropertyOptional() @IsOptional() @IsInt()     companyId?:        number | null; // admin fornece; empresa usa auth
-    @ApiProperty()  @IsString() @IsNotEmpty()         comboType!:        string;        // CIRURGIA | OFTALMO
-
-    // Combo fields opcionais
+    @ApiPropertyOptional() @IsOptional() @IsInt()     companyId?:               number | null;
+    // Estabelecimento
+    @ApiPropertyOptional() @IsOptional() @IsString()  cnes?:                    string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  establishmentName?:       string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  cnpj?:                    string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  estabKey?:                string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  uf?:                      string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  municipality?:            string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  region?:                  string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  ibge?:                    string | null;
+    // Combo
+    @ApiPropertyOptional() @IsOptional() @IsString()  comboType?:               string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  contract?:                string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  deliveryParcel?:          string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  expeditionDate?:          string | null;
@@ -118,9 +126,9 @@ export class CreateComboCompletoDto {
     @ApiPropertyOptional() @IsOptional() @IsString()  focalPointPhone?:         string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  focalPointEmail?:         string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  establishmentEmail?:      string | null;
-
-    // Equipamento (combo_equipamento)
-    @ApiProperty()  @IsString() @IsNotEmpty()         equipmentName!:    string;
+    // Equipamento
+    @ApiPropertyOptional() @IsOptional() @IsString()  equipmentName?:           string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString()  equipKey?:                string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  comboCode?:               string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  serialNumber?:            string | null;
     @ApiPropertyOptional() @IsOptional() @IsBoolean() nfSent?:                  boolean | null;

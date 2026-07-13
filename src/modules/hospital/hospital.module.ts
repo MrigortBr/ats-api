@@ -6,12 +6,11 @@ import { HospitalService } from "./hospital.service";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
-import { HospitalCombo } from "./entities/hospital-combo.entity";
-import { ComboEquipamento } from "./entities/combo-equipamento.entity";
+import { ComboConsult } from "./entities/combo-consult.entity";
 import { Uf } from "../uf/entities/uf.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Hospital, HospitalTomo, HospitalRnm, HospitalCombo, ComboEquipamento, Uf])],
+    imports: [TypeOrmModule.forFeature([Hospital, HospitalTomo, HospitalRnm, ComboConsult, Uf])],
     controllers: [HospitalController],
     providers: [HospitalService, Reflector],
     exports: [HospitalService],

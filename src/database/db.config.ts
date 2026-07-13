@@ -13,8 +13,7 @@ import { TransportValue } from "../modules/transport-value/entities/transport-va
 import { Hospital } from "../modules/hospital/entities/hospital.entity";
 import { HospitalTomo } from "../modules/hospital/entities/hospital-tomo.entity";
 import { HospitalRnm } from "../modules/hospital/entities/hospital-rnm.entity";
-import { HospitalCombo } from "../modules/hospital/entities/hospital-combo.entity";
-import { ComboEquipamento } from "../modules/hospital/entities/combo-equipamento.entity";
+import { ComboConsult } from "../modules/hospital/entities/combo-consult.entity";
 import { CibDocument } from "../modules/cib/entities/cib-document.entity";
 import { RnmDocument } from "../modules/rnm-document/entities/rnm-document.entity";
 import { CotaGeralMunicipio } from "../modules/cota-geral-municipio/entities/cota-geral-municipio.entity";
@@ -27,7 +26,7 @@ export const DB_ENTITIES: any[] = [
     Users, Company, Role, RoleModuleEntity,
     Uf, TransportRtx, TransportTrs, GeneralQuota,
     DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue,
-    Hospital, HospitalTomo, HospitalRnm, HospitalCombo, ComboEquipamento,
+    Hospital, HospitalTomo, HospitalRnm, ComboConsult,
     CibDocument, RnmDocument, CotaGeralMunicipio,
     EmpresaProblem,
 ];

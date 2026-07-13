@@ -8,19 +8,19 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
-import { HospitalCombo } from "../../hospital/entities/hospital-combo.entity";
+import { ComboConsult } from "../../hospital/entities/combo-consult.entity";
 
 @Entity("company_problem_reports")
 export class EmpresaProblem {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column({ name: "combo_id", type: "integer" })
-    comboId!: number;
+    @Column({ name: "consult_id", type: "integer", nullable: true })
+    consultId!: number | null;
 
-    @ManyToOne(() => HospitalCombo, { onDelete: "CASCADE", eager: false })
-    @JoinColumn({ name: "combo_id" })
-    combo!: HospitalCombo;
+    @ManyToOne(() => ComboConsult, { onDelete: "SET NULL", eager: false, nullable: true })
+    @JoinColumn({ name: "consult_id" })
+    consult!: ComboConsult | null;
 
     @Column({ type: "text", nullable: true })
     queixa!: string | null;

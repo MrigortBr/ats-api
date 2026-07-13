@@ -21,7 +21,7 @@ export class HospitalCombo {
     @Column({ name: "hospital_id", type: "integer" })
     hospitalId!: number;
 
-    @ManyToOne(() => Hospital, (h) => h.combos)
+    @ManyToOne(() => Hospital)
     @JoinColumn({ name: "hospital_id" })
     hospital!: Hospital;
 

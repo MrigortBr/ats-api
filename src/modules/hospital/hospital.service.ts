@@ -1,13 +1,12 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, DataSource, IsNull } from "typeorm";
+import { Repository, DataSource } from "typeorm";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
-import { HospitalCombo } from "./entities/hospital-combo.entity";
-import { ComboEquipamento } from "./entities/combo-equipamento.entity";
+import { ComboConsult } from "./entities/combo-consult.entity";
 import { Uf } from "../uf/entities/uf.entity";
-import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto, CreateComboEquipamentoDto, UpdateComboEquipamentoDto } from "./dto/hospital.dto";
+import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateComboConsultDto, CreateComboConsultDto } from "./dto/hospital.dto";
 
 const DEMAS_BASE = "https://apidadosabertos.saude.gov.br/cnes";
 const IBGE_BASE  = "https://servicodados.ibge.gov.br/api/v1/localidades";
@@ -52,10 +51,8 @@ export class HospitalService {
         private readonly tomoRepo: Repository<HospitalTomo>,
         @InjectRepository(HospitalRnm)
         private readonly rnmRepo: Repository<HospitalRnm>,
-        @InjectRepository(HospitalCombo)
-        private readonly comboRepo: Repository<HospitalCombo>,
-        @InjectRepository(ComboEquipamento)
-        private readonly equipamentoRepo: Repository<ComboEquipamento>,
+        @InjectRepository(ComboConsult)
+        private readonly consultRepo: Repository<ComboConsult>,
         @InjectRepository(Uf)
         private readonly ufRepo: Repository<Uf>,
         private readonly dataSource: DataSource,
@@ -286,9 +283,9 @@ export class HospitalService {
     }
 
     async softDeleteCombo(id: number): Promise<void> {
-        const record = await this.comboRepo.findOne({ where: { id } });
+        const record = await this.consultRepo.findOne({ where: { id } });
         if (!record) throw new NotFoundException(`Registro COMBO ${id} não encontrado`);
-        await this.comboRepo.softDelete(id);
+        await this.consultRepo.softDelete(id);
     }
 
     // ── LIST TOMO ─────────────────────────────────────────────────────────────
@@ -359,128 +356,98 @@ export class HospitalService {
         return this.tomoRepo.save(record);
     }
 
-    // ── CREATE COMBO ─────────────────────────────────────────────────────────
+    // ── CREATE COMBO CONSULT ──────────────────────────────────────────────────
 
-    async createCombo(dto: CreateHospitalComboDto, companyId?: number | null): Promise<HospitalCombo> {
-        const external = await this.fetchCnes(dto.cnes);
+    async createCombo(dto: CreateComboConsultDto, companyId?: number | null): Promise<ComboConsult> {
+        const cnesClean = dto.cnes ? dto.cnes.trim().padStart(7, "0") : null;
+        let hospitalId: number | null = null;
 
-        return this.dataSource.transaction(async (em) => {
-            let hospital = await em.findOne(Hospital, { where: { cnes: external.cnes } });
+        if (cnesClean) {
+            const hospital = await this.hospitalRepo.findOne({ where: { cnes: cnesClean } });
+            hospitalId = hospital?.id ?? null;
+        }
 
-            if (!hospital) {
-                const uf = await this.ufRepo.findOne({ where: { uf: external.ufSigla } });
-                if (!uf) throw new NotFoundException(`UF ${external.ufSigla} não encontrada`);
-                hospital = em.create(Hospital, {
-                    ufId: uf.id,
-                    name: external.name,
-                    municipality: external.municipality,
-                    cnes: external.cnes,
-                });
-                await em.save(hospital);
-            }
+        let coId: number | null = null;
+        if (companyId) coId = companyId;
+        else if (dto.companyId) coId = dto.companyId;
 
-            const { cnes: _cnes, ...comboData } = dto;
-            const combo = em.create(HospitalCombo, {
-                hospitalId: hospital.id,
-                ...comboData,
-                companyId: companyId ?? null,
-            });
-            const saved = await em.save(HospitalCombo, combo);
-
-            return em.findOneOrFail(HospitalCombo, {
-                where: { id: saved.id },
-                relations: { hospital: { uf: true } },
-            });
-        });
+        const { cnes: _cnes, companyId: _cid, ...rest } = dto;
+        const record = this.consultRepo.create({ ...rest, hospitalId, companyId: coId });
+        return this.consultRepo.save(record);
     }
 
-    // ── LIST COMBO ────────────────────────────────────────────────────────────
+    // ── LIST COMBO CONSULT ────────────────────────────────────────────────────
 
     async findAllCombo(companyId?: number | null) {
-        return this.comboRepo.find({
-            // Registros com company_id = NULL são "globais" — visíveis para todos.
-            // Usuários com empresa veem seus registros + os globais.
-            where: companyId ? [{ companyId }, { companyId: IsNull() }] : undefined,
+        const where = companyId ? { companyId } : undefined;
+        return this.consultRepo.find({
+            where,
             relations: { hospital: { uf: true }, company: true },
-            order: { hospital: { uf: { uf: "ASC" }, name: "ASC" }, comboType: "ASC" },
+            order: { uf: "ASC", establishmentName: "ASC", comboType: "ASC" },
         });
     }
 
     async findComboByUf(ufSigla: string, companyId?: number | null) {
-        return this.comboRepo.find({
-            where: companyId
-                ? [
-                    { hospital: { uf: { uf: ufSigla } }, companyId },
-                    { hospital: { uf: { uf: ufSigla } }, companyId: IsNull() },
-                ]
-                : { hospital: { uf: { uf: ufSigla } } },
+        const where = companyId
+            ? { uf: ufSigla, companyId }
+            : { uf: ufSigla };
+        return this.consultRepo.find({
+            where,
             relations: { hospital: { uf: true }, company: true },
-            order: { hospital: { name: "ASC" }, comboType: "ASC" },
+            order: { establishmentName: "ASC", comboType: "ASC" },
         });
     }
 
-    // ── UPDATE COMBO ──────────────────────────────────────────────────────────
+    // ── UPDATE COMBO CONSULT ──────────────────────────────────────────────────
 
-    async updateCombo(id: number, data: UpdateHospitalComboDto): Promise<HospitalCombo> {
-        const record = await this.comboRepo.findOne({ where: { id }, relations: { hospital: { uf: true } } });
+    async updateCombo(id: number, data: UpdateComboConsultDto): Promise<ComboConsult> {
+        const record = await this.consultRepo.findOne({ where: { id } });
         if (!record) throw new NotFoundException(`Registro COMBO ${id} não encontrado`);
-
-        const { cnes, cnpj, ...comboData } = data;
-        Object.assign(record, comboData);
-
-        let hospitalChanged = false;
-        if (cnes !== undefined) {
-            record.hospital.cnes = cnes ? cnes.trim().replace(/\D/g, "").padStart(7, "0") : null;
-            hospitalChanged = true;
-        }
-        if (cnpj !== undefined) { record.hospital.cnpj = cnpj ?? null; hospitalChanged = true; }
-        if (hospitalChanged) await this.hospitalRepo.save(record.hospital);
-
-        return this.comboRepo.save(record);
+        Object.assign(record, data);
+        return this.consultRepo.save(record);
     }
 
-    // ── COMBO EQUIPAMENTO ─────────────────────────────────────────────────────
+    // ── COMBO CONSULT — equipamentos (alias de listagem flat) ─────────────────
 
-    async createEquipamento(dto: CreateComboEquipamentoDto): Promise<ComboEquipamento> {
-        const combo = await this.comboRepo.findOne({ where: { id: dto.comboId } });
-        if (!combo) throw new NotFoundException(`Combo ${dto.comboId} não encontrado`);
-        const equipamento = this.equipamentoRepo.create(dto);
-        return this.equipamentoRepo.save(equipamento);
-    }
-
-    async findAllEquipamentos(companyId?: number | null): Promise<(ComboEquipamento & { establishmentCode: string | null })[]> {
-        const items = await this.equipamentoRepo.find({
-            where: companyId
-                ? [{ combo: { companyId } }, { combo: { companyId: IsNull() } }]
-                : undefined,
-            relations: { combo: { hospital: { uf: true }, company: true } },
-            order: { combo: { hospital: { uf: { uf: "ASC" }, name: "ASC" } }, id: "ASC" },
+    async findAllEquipamentos(companyId?: number | null) {
+        const where = companyId ? { companyId } : undefined;
+        return this.consultRepo.find({
+            where,
+            relations: { hospital: { uf: true }, company: true },
+            order: { uf: "ASC", establishmentName: "ASC", id: "ASC" },
         });
-        return items.map(e => Object.assign(e, {
-            establishmentCode: e.combo?.hospital?.cnes != null && e.combo?.comboType
-                ? `${e.combo.hospital.cnes}_${e.combo.comboType}_${e.combo.contract ?? ''}`
-                : null,
-        }));
     }
 
-    async findEquipamentosByCombo(comboId: number): Promise<ComboEquipamento[]> {
-        return this.equipamentoRepo.find({
-            where: { comboId },
+    async createEquipamento(dto: CreateComboConsultDto): Promise<ComboConsult> {
+        const { cnes, companyId: cid, ...rest } = dto;
+        const cnesClean = cnes ? cnes.trim().padStart(7, "0") : null;
+        let hospitalId: number | null = null;
+        if (cnesClean) {
+            const hospital = await this.hospitalRepo.findOne({ where: { cnes: cnesClean } });
+            hospitalId = hospital?.id ?? null;
+        }
+        const record = this.consultRepo.create({ ...rest, hospitalId, companyId: cid ?? null });
+        return this.consultRepo.save(record);
+    }
+
+    async findEquipamentosByCombo(estabKey: string) {
+        return this.consultRepo.find({
+            where: { estabKey },
             order: { id: "ASC" },
         });
     }
 
-    async updateEquipamento(id: number, data: UpdateComboEquipamentoDto): Promise<ComboEquipamento> {
-        const record = await this.equipamentoRepo.findOne({ where: { id } });
+    async updateEquipamento(id: number, data: UpdateComboConsultDto): Promise<ComboConsult> {
+        const record = await this.consultRepo.findOne({ where: { id } });
         if (!record) throw new NotFoundException(`Equipamento ${id} não encontrado`);
         Object.assign(record, data);
-        return this.equipamentoRepo.save(record);
+        return this.consultRepo.save(record);
     }
 
     async softDeleteEquipamento(id: number): Promise<void> {
-        const record = await this.equipamentoRepo.findOne({ where: { id } });
+        const record = await this.consultRepo.findOne({ where: { id } });
         if (!record) throw new NotFoundException(`Equipamento ${id} não encontrado`);
-        await this.equipamentoRepo.softDelete(id);
+        await this.consultRepo.softDelete(id);
     }
 
     // ── UPDATE RNM ────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, 
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { HospitalService } from "./hospital.service";
-import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, UpdateHospitalComboDto, CreateHospitalComboDto, CreateComboEquipamentoDto, UpdateComboEquipamentoDto } from "./dto/hospital.dto";
+import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, CreateComboConsultDto, UpdateComboConsultDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
@@ -96,8 +96,8 @@ export class HospitalController {
 
     @Post("combo")
     @RequiresModule("combo")
-    @ApiOperation({ summary: "Adicionar novo registro COMBO via CNES" })
-    createCombo(@Body() dto: CreateHospitalComboDto, @Req() req: AuthRequest) {
+    @ApiOperation({ summary: "Adicionar novo registro COMBO" })
+    createCombo(@Body() dto: CreateComboConsultDto, @Req() req: AuthRequest) {
         return this.service.createCombo(dto, req.user?.companyId);
     }
 
@@ -118,7 +118,7 @@ export class HospitalController {
     @Put("combo/:id")
     @RequiresModule("combo")
     @ApiOperation({ summary: "Atualizar dados de um registro COMBO" })
-    updateCombo(@Param("id") id: string, @Body() dto: UpdateHospitalComboDto) {
+    updateCombo(@Param("id") id: string, @Body() dto: UpdateComboConsultDto) {
         return this.service.updateCombo(Number(id), dto);
     }
 
@@ -151,22 +151,22 @@ export class HospitalController {
 
     @Post("combo-equipamento")
     @RequiresModule("combo")
-    @ApiOperation({ summary: "Criar equipamento de um combo" })
-    createEquipamento(@Body() dto: CreateComboEquipamentoDto) {
+    @ApiOperation({ summary: "Criar registro de equipamento COMBO" })
+    createEquipamento(@Body() dto: CreateComboConsultDto) {
         return this.service.createEquipamento(dto);
     }
 
-    @Get("combo/:id/equipamentos")
+    @Get("combo/:estabKey/equipamentos")
     @RequiresModule("combo")
-    @ApiOperation({ summary: "Listar equipamentos de um combo" })
-    findEquipamentosByCombo(@Param("id") id: string) {
-        return this.service.findEquipamentosByCombo(Number(id));
+    @ApiOperation({ summary: "Listar equipamentos de um estabelecimento (por estabKey)" })
+    findEquipamentosByCombo(@Param("estabKey") estabKey: string) {
+        return this.service.findEquipamentosByCombo(estabKey);
     }
 
     @Put("combo-equipamento/:id")
     @RequiresModule("combo")
     @ApiOperation({ summary: "Atualizar equipamento" })
-    updateEquipamento(@Param("id") id: string, @Body() dto: UpdateComboEquipamentoDto) {
+    updateEquipamento(@Param("id") id: string, @Body() dto: UpdateComboConsultDto) {
         return this.service.updateEquipamento(Number(id), dto);
     }
 

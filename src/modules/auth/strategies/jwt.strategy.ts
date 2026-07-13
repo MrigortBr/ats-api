@@ -11,6 +11,7 @@ interface JwtPayload {
     roleId?: number | null;
     modules?: string[];
     writeModules?: string[];
+    companyScopes?: Record<string, number[] | null>;
     companyId?: number | null;
     jti?: string;
     exp?: number;
@@ -48,6 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             roleId: payload.roleId ?? null,
             modules: payload.modules ?? [],
             writeModules: payload.writeModules ?? [],
+            companyScopes: payload.companyScopes ?? {},
             companyId: payload.companyId ?? null,
             jti: payload.jti ?? null,
             exp: payload.exp ?? null,

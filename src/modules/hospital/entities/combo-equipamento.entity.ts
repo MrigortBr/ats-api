@@ -33,9 +33,6 @@ export class ComboEquipamento {
     @Column({ name: "serial_number", type: "varchar", nullable: true })
     serialNumber!: string | null;
 
-    @Column({ type: "varchar", nullable: true })
-    company!: string | null;
-
     // Nota Fiscal
 
     @Column({ name: "nf_sent", type: "boolean", nullable: true })

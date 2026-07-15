@@ -359,6 +359,19 @@ export class EmpresaService {
         }));
     }
 
+    async findAdminPainelMinDate(): Promise<{ minDate: string }> {
+        const result = await this.consultRepo
+            .createQueryBuilder("cc")
+            .select("MIN(cc.created_at)", "minDate")
+            .where("cc.deleted_at IS NULL")
+            .andWhere("cc.company_id IS NOT NULL")
+            .getRawOne<{ minDate: string | null }>();
+        const minDate = result?.minDate
+            ? new Date(result.minDate).toISOString().slice(0, 10)
+            : "2020-01-01";
+        return { minDate };
+    }
+
     async findAdminPainel() {
         const rows = await this.consultRepo
             .createQueryBuilder("cc")

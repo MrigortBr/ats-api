@@ -4,7 +4,6 @@ import type { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import { TokenBlocklistService } from "./services/token-blocklist.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { validatePayload } from "../../utils/payload";
 import { LoginDto } from "./dto/create-user.dto";
 import * as payload from "./type/payload";
 
@@ -35,7 +34,6 @@ export class AuthController {
         @Body() body: LoginDto,
         @Res({ passthrough: true }) res: Response,
     ) {
-        validatePayload(body as unknown as Record<string, unknown>, ["login", "password"], true);
         const result = await this.authService.login(body as unknown as payload.login);
         res.cookie(COOKIE_NAME, result.access_token, cookieOptions());
         return { user: result.user };

@@ -206,6 +206,12 @@ export class EmpresaController {
         return this.service.findAdminProblemas(companyId);
     }
 
+    @Get("admin/painel/min-date")
+    @RequiresModule("admin")
+    adminPainelMinDate() {
+        return this.service.findAdminPainelMinDate();
+    }
+
     @Get("admin/painel")
     @RequiresModule("admin")
     adminPainel() {

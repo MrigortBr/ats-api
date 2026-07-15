@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Matches } from "class-validator";
+
+const CNPJ_REGEX = /^\d{14}$/;
 
 export class CreateEmpresaProblemDto {
     @ApiProperty({ description: "ID do combo_consult" })
@@ -101,7 +103,7 @@ export class CreateComboCompletoDto {
     // Estabelecimento
     @ApiPropertyOptional() @IsOptional() @IsString()  cnes?:                    string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  establishmentName?:       string | null;
-    @ApiPropertyOptional() @IsOptional() @IsString()  cnpj?:                    string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() @Matches(CNPJ_REGEX, { message: "cnpj deve conter exatamente 14 dígitos numéricos" }) cnpj?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  estabKey?:                string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  uf?:                      string | null;
     @ApiPropertyOptional() @IsOptional() @IsString()  municipality?:            string | null;

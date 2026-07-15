@@ -1,6 +1,5 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
@@ -52,26 +51,6 @@ async function bootstrap() {
     server.keepAliveTimeout = 65_000;
     server.headersTimeout   = 66_000;
 
-    // Swagger -- desabilitado por padrao; ative com SWAGGER_ENABLED=true no .env
-    if (process.env.SWAGGER_ENABLED === "true") {
-        const config = new DocumentBuilder()
-            .setTitle("ATS API")
-            .setDescription(
-                "Acompanhamento do Transporte Sanitario -- Lei 15.233/2025\n\n" +
-                "**Todas as respostas** sao embrulhadas pelo ResponseInterceptor:\n" +
-                "```json\n{ \"timestamp\": \"...\", \"message\": \"OK\", \"data\": <payload> }\n```\n\n" +
-                "Use o botao **Authorize** para inserir o JWT obtido em POST /auth/login."
-            )
-            .setVersion("1.0")
-            .addBearerAuth(
-                { type: "http", scheme: "bearer", bearerFormat: "JWT", name: "bearer" },
-                "bearer",
-            )
-            .build();
-        const document = SwaggerModule.createDocument(app, config);
-        SwaggerModule.setup("docs", app, document);
-    }
-
     const port = Number(process.env.PORT) || 2001;
     await app.listen(port);
 
@@ -80,9 +59,6 @@ async function bootstrap() {
     logger.log("-=-=-=-=- ATS API -=-=-=-=-");
     logger.log(`Ready in ${process.uptime().toFixed(1)}s`);
     logger.log(`Local:   http://localhost:${port}`);
-    if (process.env.SWAGGER_ENABLED === "true") {
-        logger.log(`Swagger: http://localhost:${port}/docs`);
-    }
     logger.log("-=-=-=-=--=-=-=-=--=-=-=-=-");
 }
 

@@ -1,7 +1,6 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { TokenBlocklistService } from "./services/token-blocklist.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
@@ -17,14 +16,12 @@ function cookieOptions() {
     return {
         httpOnly: true,
         secure: isProd,
-        // "none" é obrigatório quando API e frontend estão em domínios diferentes (cross-site).
-        // Requer secure=true em produção; em dev (localhost) usa "lax" para funcionar sem HTTPS.
+        // "none" e obrigatorio quando API e frontend estao em dominios diferentes (cross-site).
+        // Requer secure=true em producao; em dev (localhost) usa "lax" para funcionar sem HTTPS.
         sameSite: (isProd ? "none" : "lax") as "none" | "lax",
         maxAge: COOKIE_MAX_AGE,
     };
 }
-
-@ApiTags("auth")
 @Controller("/auth")
 export class AuthController {
     constructor(
@@ -34,8 +31,6 @@ export class AuthController {
 
     @Post("/login")
     @Throttle({ default: { limit: 5, ttl: 60_000 } })
-    @ApiOperation({ summary: "Login — define cookie HttpOnly com JWT" })
-    @ApiBody({ type: LoginDto })
     async login(
         @Body() body: LoginDto,
         @Res({ passthrough: true }) res: Response,
@@ -48,23 +43,26 @@ export class AuthController {
 
     @Post("/refresh")
     @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth("bearer")
-    @ApiOperation({ summary: "Renova o JWT (sliding session) — redefine o cookie" })
     async refresh(
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response,
     ) {
         const result = await this.authService.refresh(
-            req.user as { id: number; email: string; role?: string | null; roleId?: number | null; modules?: string[]; companyId?: number | null },
+            req.user as { id: number; email: string; name?: string; surname?: string | null; role?: string | null; roleId?: number | null; modules?: string[]; companyId?: number | null },
         );
         res.cookie(COOKIE_NAME, result.access_token, cookieOptions());
         return { message: "Token renovado" };
     }
 
+    @Get("/me")
+    @UseGuards(JwtAuthGuard)
+    me(@Req() req: Request) {
+        // req.user e populado pelo JwtStrategy.validate() — sem acesso ao DB
+        return req.user;
+    }
+
     @Post("/logout")
     @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth("bearer")
-    @ApiOperation({ summary: "Logout — limpa o cookie JWT e revoga o token" })
     async logout(
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response,

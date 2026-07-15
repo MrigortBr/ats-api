@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { ScheduleModule } from "@nestjs/schedule";
 import { AppController } from "./app.controller";
 import { DatabaseModule } from "./database/database.module";
 import { RedisModule } from "./modules/redis/redis.module";
@@ -33,6 +34,7 @@ import { EmpresaModule } from "./modules/empresa/empresa.module";
     ],
     imports: [
         ThrottlerModule.forRoot([{ name: "global", ttl: 60_000, limit: 300 }]),
+        ScheduleModule.forRoot(),
         DatabaseModule,
         RedisModule,
         AuthModule,

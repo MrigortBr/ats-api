@@ -6,7 +6,6 @@ import { AuthRepository } from "./auth.repository";
 import { InvalidCredentialsException } from "./exceptions/invalid.exception";
 import * as payload from "./type/payload";
 
-
 /**
  * Constrói mapa module → companyIds (null = todas as empresas).
  *
@@ -69,6 +68,8 @@ export class AuthService {
             jti,
             sub:          user.id,
             email:        user.email,
+            name:         user.name,
+            surname:      user.surname ?? null,
             /** RBAC */
             roleId:       user.roleId,
             modules,
@@ -97,6 +98,8 @@ export class AuthService {
     async refresh(user: {
         id: number;
         email: string;
+        name?: string;
+        surname?: string | null;
         roleId?: number | null;
         modules?: string[];
         companyId?: number | null;
@@ -114,6 +117,8 @@ export class AuthService {
             jti:          uuidv4(),
             sub:          user.id,
             email:        user.email,
+            name:         dbUser?.name ?? user.name,
+            surname:      dbUser?.surname ?? user.surname ?? null,
             roleId:       dbUser?.roleId ?? user.roleId,
             modules,
             writeModules,

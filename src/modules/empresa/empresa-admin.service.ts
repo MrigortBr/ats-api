@@ -72,21 +72,52 @@ export class EmpresaAdminService {
 
     // ─── Companies ────────────────────────────────────────────────────────────
 
-    /** Lista empresas dentro do escopo do usuário. */
-    async findCompanies(user: AdminUser): Promise<Company[]> {
-        if (user.modules.includes("admin") || isGestorGeral(user)) {
-            return this.companyRepo.find({ order: { name: "ASC" } });
+    /** Lista empresas dentro do escopo do usuário, com estatísticas de combos e funcionários. */
+    async findCompanies(user: AdminUser): Promise<Array<{
+        id: number; name: string; cnpj: string | null;
+        tradeName: string | null; abbreviation: string | null;
+        combosAtivos: number; equipamentosEntregues: number; funcionarios: number;
+    }>> {
+        const params: unknown[] = [];
+        let scopeClause = "";
+
+        if (!user.modules.includes("admin") && !isGestorGeral(user)) {
+            const allowed = user.companyScopes["gestor"];
+            if (!Array.isArray(allowed) || allowed.length === 0) return [];
+            params.push(allowed);
+            scopeClause = `AND c.id = ANY($${params.length})`;
         }
 
-        const allowed = user.companyScopes["gestor"];
-        if (!Array.isArray(allowed) || allowed.length === 0) return [];
-
-        return this.companyRepo
-            .createQueryBuilder("c")
-            .where("c.id IN (:...ids)", { ids: allowed })
-            .andWhere("c.deleted_at IS NULL")
-            .orderBy("c.name", "ASC")
-            .getMany();
+        return this.companyRepo.manager.query(
+            `SELECT
+               c.id,
+               c.name,
+               c.cnpj,
+               c.trade_name   AS "tradeName",
+               c.abbreviation,
+               COALESCE(cc_s.combos_ativos,   0)::int AS "combosAtivos",
+               COALESCE(cc_s.equip_entregues, 0)::int AS "equipamentosEntregues",
+               COALESCE(u_s.funcionarios,     0)::int AS "funcionarios"
+             FROM companies c
+             LEFT JOIN (
+               SELECT
+                 company_id,
+                 COUNT(DISTINCT combo_code)                         AS combos_ativos,
+                 COUNT(*) FILTER (WHERE delivery_date IS NOT NULL) AS equip_entregues
+               FROM combo_consult
+               WHERE deleted_at IS NULL
+               GROUP BY company_id
+             ) cc_s ON cc_s.company_id = c.id
+             LEFT JOIN (
+               SELECT company_id, COUNT(*) AS funcionarios
+               FROM users
+               WHERE deleted_at IS NULL
+               GROUP BY company_id
+             ) u_s ON u_s.company_id = c.id
+             WHERE c.deleted_at IS NULL ${scopeClause}
+             ORDER BY c.name`,
+            params,
+        );
     }
 
     /** Cria empresa. Restrito a gestor_geral e admin. */
@@ -127,13 +158,24 @@ export class EmpresaAdminService {
     // ─── Users ────────────────────────────────────────────────────────────────
 
     /** Lista usuários da empresa. */
-    async findUsers(user: AdminUser, companyId: number): Promise<Users[]> {
+    async findUsers(user: AdminUser, companyId: number): Promise<{
+        id: number; name: string; surname: string; email: string;
+        roleId: number | null; roleName: string | null;
+    }[]> {
         assertCompanyScope(user, companyId);
-        return this.userRepo.find({
-            where: { companyId, deletedAt: undefined },
+        const users = await this.userRepo.find({
+            where: { companyId },
             relations: { roleEntity: true },
             order: { name: "ASC" },
         });
+        return users.map(u => ({
+            id:       u.id,
+            name:     u.name,
+            surname:  u.surname,
+            email:    u.email,
+            roleId:   u.roleId,
+            roleName: u.roleEntity?.name ?? null,
+        }));
     }
 
     /**
@@ -166,7 +208,7 @@ export class EmpresaAdminService {
         if (!company) throw new NotFoundException(`Empresa ${companyId} não encontrada`);
 
         const plainPassword = generatePassword(dto.firstName, dto.lastName, company.name);
-        const hashed = await bcrypt.hash(plainPassword, 10);
+        const hashed = await bcrypt.hash(plainPassword, Number(process.env.HASH_AMOUNT ?? 12));
 
         const newUser = this.userRepo.create({
             name:      dto.firstName,
@@ -183,7 +225,7 @@ export class EmpresaAdminService {
         void this.emailService.sendWelcome({
             to:          dto.email,
             firstName:   dto.firstName,
-            companyName: company.name,
+            companyName: company.tradeName ?? company.name,
             password:    plainPassword,
         });
 
@@ -208,5 +250,27 @@ export class EmpresaAdminService {
         }
 
         await this.userRepo.softDelete(userId);
+    }
+    /** Gera nova senha e reenvia o e-mail de credenciais. */
+    async resendCredentials(requestor: AdminUser, companyId: number, userId: number): Promise<void> {
+        assertCompanyScope(requestor, companyId);
+
+        const user = await this.userRepo.findOne({ where: { id: userId, companyId } });
+        if (!user) throw new NotFoundException(`Usuário ${userId} não encontrado na empresa ${companyId}`);
+
+        const company = await this.companyRepo.findOne({ where: { id: companyId } });
+        if (!company) throw new NotFoundException(`Empresa ${companyId} não encontrada`);
+
+        const plainPassword = generatePassword(user.name, user.surname, company.name);
+        const hashed = await bcrypt.hash(plainPassword, Number(process.env.HASH_AMOUNT ?? 12));
+
+        await this.userRepo.update(userId, { password: hashed });
+
+        void this.emailService.sendWelcome({
+            to:          user.email,
+            firstName:   user.name,
+            companyName: company.tradeName ?? company.name,
+            password:    plainPassword,
+        });
     }
 }

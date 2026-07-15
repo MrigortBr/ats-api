@@ -1,16 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { Users, UserRole } from "./entities/user.entity";
+import { Users } from "./entities/user.entity";
 
 interface CreateUserData {
     name: string;
     surname: string;
     email: string;
     password: string;
-    /** Legado */
-    role?: UserRole | null;
-    /** RBAC */
     roleId?: number | null;
     companyId?: number | null;
 }

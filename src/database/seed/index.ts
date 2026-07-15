@@ -311,7 +311,6 @@ async function seed() {
     }));
     console.log("  + " + ufRecords.length + " registros atualizados em delivered_rtx_trs");
 
-
     const deliveredGqRepo = dataSource.getRepository(DeliveredGeneralQuota);
     await dataSource.query('TRUNCATE TABLE delivered_general_quota RESTART IDENTITY CASCADE');
     await deliveredGqRepo.save(ufRecords.map((u) => {

@@ -11,7 +11,6 @@ import {
     Req,
     UseGuards,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
@@ -33,9 +32,6 @@ function getUser(req: AuthRequest): AdminUser {
     if (!u) throw new Error("Usuario nao autenticado");
     return u;
 }
-
-@ApiTags("Empresa Admin")
-@ApiBearerAuth("bearer")
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("gestor")
 @Controller("/empresa/gestor")
@@ -45,13 +41,11 @@ export class EmpresaAdminController {
     // ─── Companies ─────────────────────────────────────────────────────────
 
     @Get("companies")
-    @ApiOperation({ summary: "Lista empresas no escopo do gestor" })
     findCompanies(@Req() req: AuthRequest) {
         return this.service.findCompanies(getUser(req));
     }
 
     @Post("companies")
-    @ApiOperation({ summary: "Criar empresa (gestor_geral)" })
     createCompany(
         @Req() req: AuthRequest,
         @Body() body: CreateCompanyAdminDto,
@@ -61,7 +55,6 @@ export class EmpresaAdminController {
 
     @Delete("companies/:companyId")
     @HttpCode(204)
-    @ApiOperation({ summary: "Inativar empresa (soft-delete, gestor_geral)" })
     removeCompany(
         @Req() req: AuthRequest,
         @Param("companyId", ParseIntPipe) companyId: number,
@@ -71,7 +64,6 @@ export class EmpresaAdminController {
 
     @Put("companies/:companyId")
     @UseGuards(CompanyScopeGuard)
-    @ApiOperation({ summary: "Atualizar empresa no escopo" })
     updateCompany(
         @Req() req: AuthRequest,
         @Param("companyId", ParseIntPipe) companyId: number,
@@ -84,7 +76,6 @@ export class EmpresaAdminController {
 
     @Get("companies/:companyId/users")
     @UseGuards(CompanyScopeGuard)
-    @ApiOperation({ summary: "Lista usuarios da empresa no escopo" })
     findUsers(
         @Req() req: AuthRequest,
         @Param("companyId", ParseIntPipe) companyId: number,
@@ -94,7 +85,6 @@ export class EmpresaAdminController {
 
     @Post("companies/:companyId/users")
     @UseGuards(CompanyScopeGuard)
-    @ApiOperation({ summary: "Criar usuario vinculado a empresa" })
     createUser(
         @Req() req: AuthRequest,
         @Param("companyId", ParseIntPipe) companyId: number,
@@ -103,10 +93,20 @@ export class EmpresaAdminController {
         return this.service.createUser(getUser(req), companyId, body);
     }
 
+    @Post("companies/:companyId/users/:userId/resend-credentials")
+    @UseGuards(CompanyScopeGuard)
+    @HttpCode(204)
+    resendCredentials(
+        @Req() req: AuthRequest,
+        @Param("companyId", ParseIntPipe) companyId: number,
+        @Param("userId", ParseIntPipe) userId: number,
+    ) {
+        return this.service.resendCredentials(getUser(req), companyId, userId);
+    }
+
     @Delete("companies/:companyId/users/:userId")
     @UseGuards(CompanyScopeGuard)
     @HttpCode(204)
-    @ApiOperation({ summary: "Remover usuario da empresa no escopo" })
     removeUser(
         @Req() req: AuthRequest,
         @Param("companyId", ParseIntPipe) companyId: number,

@@ -2,15 +2,20 @@ export function credentialsEmailTemplate(
     name: string,
     email: string,
     password: string,
+    companyName?: string,
 ): string {
     void email; // email é usado no subject/to, não exibido no corpo
+
+    const companyLine = companyName
+        ? `para a empresa <strong style="color:#1b5e3b;">${companyName}</strong>`
+        : "no Painel de Acompanhamento de Transportes e Equipamentos";
 
     return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Credenciais de Acesso - Acompanhamento do Transporte Sanitário</title>
+  <title>Credenciais de Acesso - Painel de Acompanhamento de Transportes e Equipamentos</title>
 </head>
 <body style="margin:0;padding:0;background:#eef4ef;font-family:'Segoe UI',Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#eef4ef;padding:48px 16px;">
@@ -22,7 +27,7 @@ export function credentialsEmailTemplate(
         <td bgcolor="#1b5e3b" style="background-color:#1b5e3b;padding:44px 48px 36px;text-align:center;">
           <p style="margin:0 0 8px;font-size:34px;line-height:1;">&#128273;</p>
           <p style="margin:0 0 4px;color:#fff;font-size:22px;font-weight:700;">Bem-vindo(a)</p>
-          <p style="margin:0;color:#a8d5bc;font-size:13px;">Acompanhamento do Transporte Sanitário - DECAN/MS</p>
+          <p style="margin:0;color:#a8d5bc;font-size:13px;">Painel de Acompanhamento de Transportes e Equipamentos - DECAN/MS</p>
         </td>
       </tr>
 
@@ -30,7 +35,7 @@ export function credentialsEmailTemplate(
       <tr>
         <td style="padding:40px 48px 32px;">
           <p style="margin:0 0 24px;color:#2d3f35;font-size:15px;line-height:1.6;">
-            Ola, <strong style="color:#1b5e3b;">${name}</strong>! Sua conta foi criada no Sistema de Acompanhamento do Transporte Sanitário. Use as credenciais abaixo para acessar.
+            Ola, <strong style="color:#1b5e3b;">${name}</strong>! Sua conta foi criada ${companyLine}. Use as credenciais abaixo para acessar.
           </p>
 
           <!-- Credentials box -->
@@ -65,7 +70,7 @@ export function credentialsEmailTemplate(
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbea;border:1px solid #f0d060;border-radius:10px;margin-bottom:24px;">
             <tr><td style="padding:14px 16px;">
               <p style="margin:0;color:#7a5c00;font-size:13px;line-height:1.5;">
-                &#9888; <strong>Não compartilhe suas credenciais.</strong> Em caso de duvidas, contate o administrador do sistema.
+                &#9888; <strong>Nao compartilhe suas credenciais.</strong> Em caso de duvidas, contate o administrador do sistema.
               </p>
             </td></tr>
           </table>
@@ -77,7 +82,7 @@ export function credentialsEmailTemplate(
       <tr>
         <td style="background:#f4f8f5;border-top:1px solid #c8dbd0;padding:20px 48px;text-align:center;">
           <p style="margin:0;color:#8faa98;font-size:11px;">
-            &copy; ${new Date().getFullYear()} Ministério da Saúde &middot; DECAN &middot; Mensagem automática, não responda.
+            &copy; ${new Date().getFullYear()} Ministerio da Saude &middot; DECAN &middot; Mensagem automatica, nao responda.
           </p>
         </td>
       </tr>
@@ -87,4 +92,25 @@ export function credentialsEmailTemplate(
 </table>
 </body>
 </html>`;
+}
+
+export function credentialsTextTemplate(
+    name: string,
+    email: string,
+    password: string,
+    companyName?: string,
+): string {
+    const company = companyName ?? "Painel de Acompanhamento de Transportes e Equipamentos";
+    return [
+        `Ola, ${name}!`,
+        ``,
+        `Sua conta foi criada no ${company}.`,
+        ``,
+        `E-mail:  ${email}`,
+        `Senha:   ${password}`,
+        ``,
+        `Recomendamos que voce altere sua senha no primeiro acesso.`,
+        ``,
+        `Acesse: https://ats-rust.vercel.app/`,
+    ].join("\n");
 }

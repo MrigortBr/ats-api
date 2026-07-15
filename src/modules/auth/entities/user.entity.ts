@@ -11,17 +11,6 @@ import {
 import { Role } from "../../role/entities/role.entity";
 import { Company } from "../../company/entities/company.entity";
 
-/** Mantido para compatibilidade enquanto a migracao de dados nao finaliza. */
-export type UserRole =
-    | "admin"
-    | "gestor_transporte"
-    | "gestor_tomo"
-    | "gestor_all"
-    | "gestor_all_combo"
-    | "visualizador_transporte"
-    | "visualizador_tomo"
-    | "visualizador_all";
-
 @Entity("users")
 export class Users {
     @PrimaryGeneratedColumn()

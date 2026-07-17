@@ -18,11 +18,13 @@ import { CibDocument } from "../modules/cib/entities/cib-document.entity";
 import { RnmDocument } from "../modules/rnm-document/entities/rnm-document.entity";
 import { CotaGeralMunicipio } from "../modules/cota-geral-municipio/entities/cota-geral-municipio.entity";
 import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.entity";
+import { EntitySchema } from "typeorm";
 
 configDotenv();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const DB_ENTITIES: any[] = [
+type EntityClass = (abstract new (...args: unknown[]) => object) | EntitySchema;
+
+export const DB_ENTITIES: EntityClass[] = [
     Users, Company, Role, RoleModuleEntity,
     Uf, TransportRtx, TransportTrs, GeneralQuota,
     DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue,

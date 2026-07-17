@@ -6,117 +6,130 @@ import { HospitalService } from "./hospital.service";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
-import { HospitalCombo } from "./entities/hospital-combo.entity";
 import { Uf } from "../uf/entities/uf.entity";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-function makeCombo(id: number, companyId: number | null): HospitalCombo {
+
+function makeHospital(partial: Partial<Hospital> = {}): Hospital {
     return {
-        id,
-        companyId,
-        comboType: "TC-MULTISLICE",
-        hospitalId: 1,
-        hospital: { id: 1, name: "Hospital Teste", uf: { uf: "SP" } } as Hospital,
-    } as HospitalCombo;
+        id: 1, name: "Hospital Teste",
+        cnes: "0000123", gestao: null, naturezaJuridica: null,
+        uf: { id: 1, uf: "SP" } as Uf,
+        ...partial,
+    } as Hospital;
 }
 
-const CNES_MOCK = {
-    cnes: "0000123",
-    name: "Hospital Teste",
-    municipality: "São Paulo",
-    ufSigla: "SP",
-};
+function makeTomo(partial: Partial<HospitalTomo> = {}): HospitalTomo {
+    return {
+        id: 1, hospitalId: 1,
+        hospital: makeHospital(),
+        ...partial,
+    } as HospitalTomo;
+}
+
+function makeRnm(partial: Partial<HospitalRnm> = {}): HospitalRnm {
+    return {
+        id: 2, hospitalId: 1,
+        hospital: makeHospital(),
+        ...partial,
+    } as HospitalRnm;
+}
 
 // ─── suite ────────────────────────────────────────────────────────────────────
+
 describe("HospitalService", () => {
     let service: HospitalService;
-    let comboRepo: { find: jest.Mock; findOne: jest.Mock; softDelete: jest.Mock };
-    let dataSource: { transaction: jest.Mock };
+    let hospitalRepo: { findOne: jest.Mock; save: jest.Mock };
+    let tomoRepo:     { findOne: jest.Mock; find: jest.Mock; save: jest.Mock; softDelete: jest.Mock };
+    let rnmRepo:      { findOne: jest.Mock; find: jest.Mock; save: jest.Mock; softDelete: jest.Mock };
 
     beforeEach(async () => {
-        comboRepo = {
-            find:       jest.fn(),
-            findOne:    jest.fn(),
-            softDelete: jest.fn(),
-        };
-        dataSource = { transaction: jest.fn() };
+        hospitalRepo = { findOne: jest.fn(), save: jest.fn() };
+        tomoRepo     = { findOne: jest.fn(), find: jest.fn(), save: jest.fn(), softDelete: jest.fn() };
+        rnmRepo      = { findOne: jest.fn(), find: jest.fn(), save: jest.fn(), softDelete: jest.fn() };
 
         const repoStub = () => ({
-            find:    jest.fn(),
-            findOne: jest.fn(),
-            save:    jest.fn(),
-            create:  jest.fn(),
-            softDelete: jest.fn(),
+            find: jest.fn(), findOne: jest.fn(), save: jest.fn(),
+            create: jest.fn(), softDelete: jest.fn(),
         });
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 HospitalService,
-                { provide: getRepositoryToken(Hospital),      useValue: repoStub() },
-                { provide: getRepositoryToken(HospitalTomo),  useValue: repoStub() },
-                { provide: getRepositoryToken(HospitalRnm),   useValue: repoStub() },
-                { provide: getRepositoryToken(HospitalCombo), useValue: comboRepo },
-                { provide: getRepositoryToken(Uf),            useValue: repoStub() },
-                { provide: DataSource,                        useValue: dataSource },
+                { provide: getRepositoryToken(Hospital),     useValue: hospitalRepo },
+                { provide: getRepositoryToken(HospitalTomo), useValue: tomoRepo },
+                { provide: getRepositoryToken(HospitalRnm),  useValue: rnmRepo },
+                { provide: getRepositoryToken(Uf),           useValue: repoStub() },
+                { provide: DataSource,                       useValue: { transaction: jest.fn() } },
             ],
         }).compile();
 
         service = module.get<HospitalService>(HospitalService);
     });
 
-    // ─── Cenário 1 — findAllCombo filtra por companyId ──────────────────────
-    describe("findAllCombo — filtro multi-tenant", () => {
-        it("passa where: { companyId } quando companyId é fornecido", async () => {
-            comboRepo.find.mockResolvedValue([makeCombo(1, 42)]);
+    // ── findAllTomo ────────────────────────────────────────────────────────────
 
-            await service.findAllCombo(42);
+    describe("findAllTomo", () => {
+        it("retorna todos os registros TOMO com relações", async () => {
+            const tomos = [makeTomo()];
+            tomoRepo.find.mockResolvedValue(tomos);
 
-            expect(comboRepo.find).toHaveBeenCalledWith(
-                expect.objectContaining({ where: { companyId: 42 } }),
+            const result = await service.findAllTomo();
+
+            expect(result).toEqual(tomos);
+            expect(tomoRepo.find).toHaveBeenCalledWith(
+                expect.objectContaining({ relations: { hospital: { uf: true } } }),
             );
         });
 
-        it("passa where: undefined quando companyId é null (retorna todos)", async () => {
-            comboRepo.find.mockResolvedValue([makeCombo(1, 1), makeCombo(2, 2)]);
-
-            await service.findAllCombo(null);
-
-            expect(comboRepo.find).toHaveBeenCalledWith(
-                expect.objectContaining({ where: undefined }),
-            );
-        });
-
-        it("empresa A não enxerga combos da empresa B", async () => {
-            const empresaACombos = [makeCombo(1, 1)];
-            comboRepo.find.mockResolvedValue(empresaACombos);
-
-            const result = await service.findAllCombo(1);
-
-            expect(result).toEqual(empresaACombos);
-            expect(result.every(c => c.companyId === 1)).toBe(true);
+        it("retorna array vazio quando não há registros", async () => {
+            tomoRepo.find.mockResolvedValue([]);
+            const result = await service.findAllTomo();
+            expect(result).toHaveLength(0);
         });
     });
 
-    // ─── Cenário 2 — findComboByUf filtra por UF + companyId ────────────────
-    describe("findComboByUf — filtro por UF com multi-tenant", () => {
-        it("inclui companyId no where quando fornecido", async () => {
-            comboRepo.find.mockResolvedValue([]);
+    // ── findTomoByUf ──────────────────────────────────────────────────────────
 
-            await service.findComboByUf("SP", 5);
+    describe("findTomoByUf", () => {
+        it("filtra por UF corretamente", async () => {
+            tomoRepo.find.mockResolvedValue([makeTomo()]);
 
-            expect(comboRepo.find).toHaveBeenCalledWith(
+            await service.findTomoByUf("SP");
+
+            expect(tomoRepo.find).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: { hospital: { uf: { uf: "SP" } }, companyId: 5 },
+                    where: { hospital: { uf: { uf: "SP" } } },
                 }),
             );
         });
+    });
 
-        it("filtra só por UF quando companyId é null", async () => {
-            comboRepo.find.mockResolvedValue([]);
+    // ── findAllRnm ────────────────────────────────────────────────────────────
 
-            await service.findComboByUf("RJ", null);
+    describe("findAllRnm", () => {
+        it("retorna todos os registros RNM com relações", async () => {
+            const rnms = [makeRnm()];
+            rnmRepo.find.mockResolvedValue(rnms);
 
-            expect(comboRepo.find).toHaveBeenCalledWith(
+            const result = await service.findAllRnm();
+
+            expect(result).toEqual(rnms);
+            expect(rnmRepo.find).toHaveBeenCalledWith(
+                expect.objectContaining({ relations: { hospital: { uf: true } } }),
+            );
+        });
+    });
+
+    // ── findRnmByUf ───────────────────────────────────────────────────────────
+
+    describe("findRnmByUf", () => {
+        it("filtra por UF corretamente", async () => {
+            rnmRepo.find.mockResolvedValue([makeRnm()]);
+
+            await service.findRnmByUf("RJ");
+
+            expect(rnmRepo.find).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { hospital: { uf: { uf: "RJ" } } },
                 }),
@@ -124,57 +137,104 @@ describe("HospitalService", () => {
         });
     });
 
-    // ─── Cenário 3 — createCombo persiste companyId ──────────────────────────
-    describe("createCombo — companyId multi-tenant", () => {
-        it("cria o combo com companyId correto", async () => {
-            const companyId = 7;
-            const savedCombo = makeCombo(10, companyId);
+    // ── softDeleteTomo ────────────────────────────────────────────────────────
 
-            // Transação executa o callback com um entity-manager mock
-            const em = {
-                findOne:       jest.fn().mockResolvedValue({ id: 1, cnes: "0000123" } as Hospital),
-                create:        jest.fn().mockReturnValue({ companyId }),
-                save:          jest.fn().mockResolvedValue({ id: 10 }),
-                findOneOrFail: jest.fn().mockResolvedValue(savedCombo),
-            };
-            dataSource.transaction.mockImplementation((cb: (em: typeof em) => Promise<unknown>) => cb(em));
+    describe("softDeleteTomo", () => {
+        it("soft-deleta registro TOMO existente", async () => {
+            tomoRepo.findOne.mockResolvedValue(makeTomo());
+            tomoRepo.softDelete.mockResolvedValue(undefined);
 
-            // Stub da chamada externa CNES
-            jest.spyOn(service as any, "fetchCnes").mockResolvedValue(CNES_MOCK);
-
-            const result = await service.createCombo(
-                { cnes: "0000123", comboType: "TC-MULTISLICE" } as any,
-                companyId,
-            );
-
-            expect(em.create).toHaveBeenCalledWith(
-                HospitalCombo,
-                expect.objectContaining({ companyId }),
-            );
-            expect(result.companyId).toBe(companyId);
+            await service.softDeleteTomo(1);
+            expect(tomoRepo.softDelete).toHaveBeenCalledWith(1);
         });
 
-        it("cria o combo com companyId null quando não fornecido", async () => {
-            const savedCombo = makeCombo(11, null);
+        it("lança NotFoundException quando registro não existe", async () => {
+            tomoRepo.findOne.mockResolvedValue(null);
+            await expect(service.softDeleteTomo(999)).rejects.toThrow(NotFoundException);
+        });
+    });
 
-            const em = {
-                findOne:       jest.fn().mockResolvedValue({ id: 1, cnes: "0000123" } as Hospital),
-                create:        jest.fn().mockReturnValue({ companyId: null }),
-                save:          jest.fn().mockResolvedValue({ id: 11 }),
-                findOneOrFail: jest.fn().mockResolvedValue(savedCombo),
-            };
-            dataSource.transaction.mockImplementation((cb: (em: typeof em) => Promise<unknown>) => cb(em));
-            jest.spyOn(service as any, "fetchCnes").mockResolvedValue(CNES_MOCK);
+    // ── softDeleteRnm ─────────────────────────────────────────────────────────
 
-            const result = await service.createCombo(
-                { cnes: "0000123", comboType: "TC-MULTISLICE" } as any,
-            );
+    describe("softDeleteRnm", () => {
+        it("soft-deleta registro RNM existente", async () => {
+            rnmRepo.findOne.mockResolvedValue(makeRnm());
+            rnmRepo.softDelete.mockResolvedValue(undefined);
 
-            expect(em.create).toHaveBeenCalledWith(
-                HospitalCombo,
-                expect.objectContaining({ companyId: null }),
-            );
-            expect(result.companyId).toBeNull();
+            await service.softDeleteRnm(2);
+            expect(rnmRepo.softDelete).toHaveBeenCalledWith(2);
+        });
+
+        it("lança NotFoundException quando registro não existe", async () => {
+            rnmRepo.findOne.mockResolvedValue(null);
+            await expect(service.softDeleteRnm(999)).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    // ── updateHospital ────────────────────────────────────────────────────────
+
+    describe("updateHospital", () => {
+        it("atualiza campos do hospital", async () => {
+            const hospital = makeHospital();
+            hospitalRepo.findOne.mockResolvedValue(hospital);
+            hospitalRepo.save.mockImplementation(h => Promise.resolve(h));
+
+            const updated = await service.updateHospital(1, { gestao: "Municipal" } as any);
+            expect(updated.gestao).toBe("Municipal");
+        });
+
+        it("lança NotFoundException quando hospital não existe", async () => {
+            hospitalRepo.findOne.mockResolvedValue(null);
+            await expect(service.updateHospital(999, {})).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    // ── updateTomo ────────────────────────────────────────────────────────────
+
+    describe("updateTomo", () => {
+        it("normaliza CNES para 7 dígitos ao atualizar", async () => {
+            const tomo = makeTomo({ hospital: makeHospital({ cnes: "0000123" }) });
+            tomoRepo.findOne.mockResolvedValue(tomo);
+            hospitalRepo.save.mockResolvedValue(tomo.hospital);
+            tomoRepo.save.mockImplementation(r => Promise.resolve(r));
+
+            await service.updateTomo(1, { cnes: "3832" } as any);
+
+            expect(tomo.hospital.cnes).toBe("0003832");
+        });
+
+        it("lança NotFoundException quando TOMO não existe", async () => {
+            tomoRepo.findOne.mockResolvedValue(null);
+            await expect(service.updateTomo(999, {})).rejects.toThrow(NotFoundException);
+        });
+
+        it("não salva hospital quando nenhum campo do hospital é alterado", async () => {
+            const tomo = makeTomo();
+            tomoRepo.findOne.mockResolvedValue(tomo);
+            tomoRepo.save.mockImplementation(r => Promise.resolve(r));
+
+            await service.updateTomo(1, { deliveryStatus: "Entregue" } as any);
+
+            expect(hospitalRepo.save).not.toHaveBeenCalled();
+        });
+    });
+
+    // ── updateRnm ─────────────────────────────────────────────────────────────
+
+    describe("updateRnm", () => {
+        it("lança NotFoundException quando RNM não existe", async () => {
+            rnmRepo.findOne.mockResolvedValue(null);
+            await expect(service.updateRnm(999, {})).rejects.toThrow(NotFoundException);
+        });
+
+        it("atualiza campos RNM sem tocar no hospital quando desnecessário", async () => {
+            const rnm = makeRnm();
+            rnmRepo.findOne.mockResolvedValue(rnm);
+            rnmRepo.save.mockImplementation(r => Promise.resolve(r));
+
+            await service.updateRnm(1, { deliveryStatus: "Instalado" } as any);
+
+            expect(hospitalRepo.save).not.toHaveBeenCalled();
         });
     });
 });

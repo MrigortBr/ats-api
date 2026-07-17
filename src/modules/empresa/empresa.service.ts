@@ -7,6 +7,7 @@ import { Company } from "../company/entities/company.entity";
 import { EmpresaProblem } from "./entities/empresa-problem.entity";
 import { EmpresaLockService } from "./empresa-lock.service";
 import { EmpresaProblemService } from "./empresa-problem.service";
+import { EmpresaPainelService } from "./empresa-painel.service";
 import {
     UpdateEmpresaEquipamentoDto,
     UpdateEmpresaContatoDto,
@@ -31,6 +32,7 @@ export class EmpresaService {
         private readonly companyRepo: Repository<Company>,
         private readonly lockService: EmpresaLockService,
         private readonly problemService: EmpresaProblemService,
+        private readonly painelService: EmpresaPainelService,
     ) {}
 
     // ── Mapeamento interno ───────────────────────────────────────────────────────
@@ -90,6 +92,54 @@ export class EmpresaService {
             companyId:              c.companyId,
             companyName:            c.company?.tradeName ?? c.company?.name ?? null,
         };
+    }
+
+    /** Copia campos de estabelecimento do template e mescla campos do DTO. */
+    private buildEquipamentoFromTemplate(
+        template: ComboConsult,
+        dto: CreateAdminEquipamentoDto,
+    ): ReturnType<typeof this.consultRepo.create> {
+        return this.consultRepo.create({
+            estabKey:           template.estabKey,
+            ufMunicipio:        template.ufMunicipio,
+            region:             template.region,
+            uf:                 template.uf,
+            municipality:       template.municipality,
+            ibge:               template.ibge,
+            cnes:               template.cnes,
+            establishmentName:  template.establishmentName,
+            cnpj:               template.cnpj,
+            comboType:          template.comboType,
+            contract:           template.contract,
+            deliveryParcel:     template.deliveryParcel,
+            address:            template.address,
+            managerData:        template.managerData,
+            managerPhone:       template.managerPhone,
+            focalPointData:     template.focalPointData,
+            focalPointPhone:    template.focalPointPhone,
+            establishmentEmail: template.establishmentEmail,
+            focalPointEmail:    template.focalPointEmail,
+            hospitalId:         template.hospitalId,
+            companyId:          template.companyId,
+            equipmentName:          dto.equipmentName,
+            comboCode:              dto.comboCode              ?? null,
+            serialNumber:           dto.serialNumber           ?? null,
+            nfSent:                 dto.nfSent                 ?? null,
+            nfNumber:               dto.nfNumber               ?? null,
+            nfSentDate:             dto.nfSentDate             ?? null,
+            nfValue:                dto.nfValue                ?? null,
+            provisionalReceiptSent: dto.provisionalReceiptSent ?? null,
+            finalReceiptSent:       dto.finalReceiptSent       ?? null,
+            payment1Value:          dto.payment1Value          ?? null,
+            payment1Nup:            dto.payment1Nup            ?? null,
+            payment1SentDate:       dto.payment1SentDate       ?? null,
+            payment2Value:          dto.payment2Value          ?? null,
+            payment2Nup:            dto.payment2Nup            ?? null,
+            payment2SentDate:       dto.payment2SentDate       ?? null,
+            payment2Deadline:       dto.payment2Deadline       ?? null,
+            totalPaid:              dto.totalPaid              ?? null,
+            paymentStatus:          dto.paymentStatus          ?? null,
+        });
     }
 
     // ── Leitura (empresa) ────────────────────────────────────────────────────────
@@ -178,50 +228,7 @@ export class EmpresaService {
             where: { id: dto.consultId, companyId },
         });
         if (!template) throw new NotFoundException(`Registro ${dto.consultId} nao encontrado`);
-
-        const record = this.consultRepo.create({
-            estabKey:           template.estabKey,
-            ufMunicipio:        template.ufMunicipio,
-            region:             template.region,
-            uf:                 template.uf,
-            municipality:       template.municipality,
-            ibge:               template.ibge,
-            cnes:               template.cnes,
-            establishmentName:  template.establishmentName,
-            cnpj:               template.cnpj,
-            comboType:          template.comboType,
-            contract:           template.contract,
-            deliveryParcel:     template.deliveryParcel,
-            address:            template.address,
-            managerData:        template.managerData,
-            managerPhone:       template.managerPhone,
-            focalPointData:     template.focalPointData,
-            focalPointPhone:    template.focalPointPhone,
-            establishmentEmail: template.establishmentEmail,
-            focalPointEmail:    template.focalPointEmail,
-            hospitalId:         template.hospitalId,
-            companyId:          template.companyId,
-            equipmentName:          dto.equipmentName,
-            comboCode:              dto.comboCode              ?? null,
-            serialNumber:           dto.serialNumber           ?? null,
-            nfSent:                 dto.nfSent                 ?? null,
-            nfNumber:               dto.nfNumber               ?? null,
-            nfSentDate:             dto.nfSentDate             ?? null,
-            nfValue:                dto.nfValue                ?? null,
-            provisionalReceiptSent: dto.provisionalReceiptSent ?? null,
-            finalReceiptSent:       dto.finalReceiptSent       ?? null,
-            payment1Value:          dto.payment1Value          ?? null,
-            payment1Nup:            dto.payment1Nup            ?? null,
-            payment1SentDate:       dto.payment1SentDate       ?? null,
-            payment2Value:          dto.payment2Value          ?? null,
-            payment2Nup:            dto.payment2Nup            ?? null,
-            payment2SentDate:       dto.payment2SentDate       ?? null,
-            payment2Deadline:       dto.payment2Deadline       ?? null,
-            totalPaid:              dto.totalPaid              ?? null,
-            paymentStatus:          dto.paymentStatus          ?? null,
-        });
-
-        const saved = await this.consultRepo.save(record);
+        const saved = await this.consultRepo.save(this.buildEquipamentoFromTemplate(template, dto));
         const full  = await this.consultRepo.findOne({ where: { id: saved.id }, relations: { company: true } });
         return this.mapConsult(full!);
     }
@@ -263,50 +270,7 @@ export class EmpresaService {
     async createAdminEquipamento(dto: CreateAdminEquipamentoDto) {
         const template = await this.consultRepo.findOne({ where: { id: dto.consultId } });
         if (!template) throw new NotFoundException(`Registro ${dto.consultId} nao encontrado`);
-
-        const record = this.consultRepo.create({
-            estabKey:           template.estabKey,
-            ufMunicipio:        template.ufMunicipio,
-            region:             template.region,
-            uf:                 template.uf,
-            municipality:       template.municipality,
-            ibge:               template.ibge,
-            cnes:               template.cnes,
-            establishmentName:  template.establishmentName,
-            cnpj:               template.cnpj,
-            comboType:          template.comboType,
-            contract:           template.contract,
-            deliveryParcel:     template.deliveryParcel,
-            address:            template.address,
-            managerData:        template.managerData,
-            managerPhone:       template.managerPhone,
-            focalPointData:     template.focalPointData,
-            focalPointPhone:    template.focalPointPhone,
-            establishmentEmail: template.establishmentEmail,
-            focalPointEmail:    template.focalPointEmail,
-            hospitalId:         template.hospitalId,
-            companyId:          template.companyId,
-            equipmentName:          dto.equipmentName,
-            comboCode:              dto.comboCode              ?? null,
-            serialNumber:           dto.serialNumber           ?? null,
-            nfSent:                 dto.nfSent                 ?? null,
-            nfNumber:               dto.nfNumber               ?? null,
-            nfSentDate:             dto.nfSentDate             ?? null,
-            nfValue:                dto.nfValue                ?? null,
-            provisionalReceiptSent: dto.provisionalReceiptSent ?? null,
-            finalReceiptSent:       dto.finalReceiptSent       ?? null,
-            payment1Value:          dto.payment1Value          ?? null,
-            payment1Nup:            dto.payment1Nup            ?? null,
-            payment1SentDate:       dto.payment1SentDate       ?? null,
-            payment2Value:          dto.payment2Value          ?? null,
-            payment2Nup:            dto.payment2Nup            ?? null,
-            payment2SentDate:       dto.payment2SentDate       ?? null,
-            payment2Deadline:       dto.payment2Deadline       ?? null,
-            totalPaid:              dto.totalPaid              ?? null,
-            paymentStatus:          dto.paymentStatus          ?? null,
-        });
-
-        const saved = await this.consultRepo.save(record);
+        const saved = await this.consultRepo.save(this.buildEquipamentoFromTemplate(template, dto));
         const full  = await this.consultRepo.findOne({ where: { id: saved.id }, relations: { company: true } });
         return this.mapConsult(full!);
     }
@@ -326,116 +290,18 @@ export class EmpresaService {
         return this.findContatos(companyId);
     }
 
-    async findAdminCompanies() {
-        const companies = await this.companyRepo
-            .createQueryBuilder("c")
-            .select(["c.id", "c.name", "c.cnpj", "c.tradeName", "c.abbreviation"])
-            .where("c.deletedAt IS NULL")
-            .orderBy("c.name", "ASC")
-            .getMany();
+    // ── Delegacoes: Painel ───────────────────────────────────────────────────────
 
-        if (companies.length === 0) return [];
-
-        const rows = await this.consultRepo
-            .createQueryBuilder("cc")
-            .select("cc.company_id", "companyId")
-            .addSelect("MIN(cc.combo_type)", "comboType")
-            .where("cc.company_id IN (:...ids)", { ids: companies.map((c) => c.id) })
-            .andWhere("cc.deleted_at IS NULL")
-            .groupBy("cc.company_id")
-            .getRawMany<{ companyId: number; comboType: string }>();
-
-        const groupMap = new Map(rows.map((r) => [Number(r.companyId), r.comboType]));
-
-        return companies.map((c) => ({
-            id: c.id,
-            name: c.name,
-            cnpj: c.cnpj,
-            tradeName: c.tradeName,
-            abbreviation: c.abbreviation,
-            comboGroup: groupMap.has(c.id)
-                ? (groupMap.get(c.id)!.includes("OFTALMO") ? "OFTALMO" : "CIRURGIA")
-                : null,
-        }));
+    findAdminCompanies() {
+        return this.painelService.findAdminCompanies();
     }
 
-    async findAdminPainelMinDate(): Promise<{ minDate: string }> {
-        const result = await this.consultRepo
-            .createQueryBuilder("cc")
-            .select("MIN(cc.created_at)", "minDate")
-            .where("cc.deleted_at IS NULL")
-            .andWhere("cc.company_id IS NOT NULL")
-            .getRawOne<{ minDate: string | null }>();
-        const minDate = result?.minDate
-            ? new Date(result.minDate).toISOString().slice(0, 10)
-            : "2020-01-01";
-        return { minDate };
+    findAdminPainelMinDate() {
+        return this.painelService.findAdminPainelMinDate();
     }
 
-    async findAdminPainel() {
-        const rows = await this.consultRepo
-            .createQueryBuilder("cc")
-            .leftJoin("cc.company", "c")
-            .select("cc.combo_type",         "combo_type")
-            .addSelect("cc.delivery_status",  "delivery_status")
-            .addSelect("COALESCE(cc.equipment_count, 0)", "equipment_count")
-            .addSelect("c.id",               "company_id")
-            .addSelect("c.name",             "company_name")
-            .addSelect("c.trade_name",        "company_trade_name")
-            .where("cc.deleted_at IS NULL")
-            .andWhere("cc.company_id IS NOT NULL")
-            .getRawMany<{
-                combo_type:          string | null;
-                delivery_status:     string | null;
-                equipment_count:     string;
-                company_id:          string | null;
-                company_name:        string | null;
-                company_trade_name:  string | null;
-            }>();
-
-        const byType = new Map<string, { total: number; delivered: number; totalEquip: number; deliveredEquip: number }>();
-        const byComp = new Map<string, { name: string; group: string; total: number; delivered: number }>();
-
-        for (const r of rows) {
-            const group       = r.combo_type?.includes("OFTALMO") ? "OFTALMO" : "CIRURGIA";
-            const equip       = Number(r.equipment_count) || 0;
-            const isDelivered = (r.delivery_status ?? "").toLowerCase().includes("entregue");
-
-            const t = byType.get(group) ?? { total: 0, delivered: 0, totalEquip: 0, deliveredEquip: 0 };
-            t.total++;
-            t.totalEquip += equip;
-            if (isDelivered) { t.delivered++; t.deliveredEquip += equip; }
-            byType.set(group, t);
-
-            if (r.company_id) {
-                const comp = byComp.get(r.company_id) ?? { name: r.company_trade_name ?? r.company_name ?? "", group, total: 0, delivered: 0 };
-                comp.total += equip;
-                if (isDelivered) comp.delivered += equip;
-                byComp.set(r.company_id, comp);
-            }
-        }
-
-        const porTipoCombo = Array.from(byType.entries()).map(([grp, v]) => ({
-            comboGroup:            grp as "CIRURGIA" | "OFTALMO",
-            totalCombos:           v.total,
-            combosEntregues:       v.delivered,
-            percentEntregues:      v.total ? Math.round((v.delivered / v.total) * 100) : 0,
-            totalEquipamentos:     v.totalEquip,
-            equipamentosEntregues: v.deliveredEquip,
-            percentEquipEntregues: v.totalEquip ? Math.round((v.deliveredEquip / v.totalEquip) * 100) : 0,
-        }));
-
-        const porEmpresa = Array.from(byComp.values()).map(c => ({
-            companyName:           c.name,
-            comboGroup:            c.group as "CIRURGIA" | "OFTALMO",
-            totalEquipamentos:     c.total,
-            equipamentosEntregues: c.delivered,
-            percentEntregues:      c.total ? Math.round((c.delivered / c.total) * 100) : 0,
-            pendentes:             c.total - c.delivered,
-            percentPendentes:      c.total ? Math.round(((c.total - c.delivered) / c.total) * 100) : 0,
-        }));
-
-        return { porTipoCombo, porEmpresa };
+    findAdminPainel() {
+        return this.painelService.findAdminPainel();
     }
 
     // ── Hospitais ────────────────────────────────────────────────────────────────

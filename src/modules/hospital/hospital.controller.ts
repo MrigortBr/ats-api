@@ -2,6 +2,7 @@ import { SkipThrottle } from "@nestjs/throttler";
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { HospitalService } from "./hospital.service";
+import { HospitalComboService } from "./hospital-combo.service";
 import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, CreateComboConsultDto, UpdateComboConsultDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
@@ -15,7 +16,10 @@ interface AuthRequest extends Request {
 @SkipThrottle()
 @Controller("/hospital")
 export class HospitalController {
-    constructor(private readonly service: HospitalService) {}
+    constructor(
+        private readonly service: HospitalService,
+        private readonly comboService: HospitalComboService,
+    ) {}
 
     // ── Lookup ────────────────────────────────────────────────────────────────
 
@@ -82,25 +86,25 @@ export class HospitalController {
     @Post("combo")
     @RequiresModule("combo")
     createCombo(@Body() dto: CreateComboConsultDto, @Req() req: AuthRequest) {
-        return this.service.createCombo(dto, req.user?.companyId);
+        return this.comboService.createCombo(dto, req.user?.companyId);
     }
 
     @Get("combo")
     @RequiresModule("combo")
     findAllCombo(@Req() req: AuthRequest) {
-        return this.service.findAllCombo(req.user?.companyId);
+        return this.comboService.findAllCombo(req.user?.companyId);
     }
 
     @Get("combo/by-uf/:uf")
     @RequiresModule("combo")
     findComboByUf(@Param("uf") uf: string, @Req() req: AuthRequest) {
-        return this.service.findComboByUf(uf.toUpperCase(), req.user?.companyId);
+        return this.comboService.findComboByUf(uf.toUpperCase(), req.user?.companyId);
     }
 
     @Put("combo/:id")
     @RequiresModule("combo")
     updateCombo(@Param("id") id: string, @Body() dto: UpdateComboConsultDto) {
-        return this.service.updateCombo(Number(id), dto);
+        return this.comboService.updateCombo(Number(id), dto);
     }
 
     // ── Soft deletes ──────────────────────────────────────────────────────────
@@ -116,38 +120,38 @@ export class HospitalController {
     @Delete("combo/:id")
     @RequiresModule("combo")
     @HttpCode(204)
-    softDeleteCombo(@Param("id") id: string) { return this.service.softDeleteCombo(Number(id)); }
+    softDeleteCombo(@Param("id") id: string) { return this.comboService.softDeleteCombo(Number(id)); }
 
     // ── Combo Equipamento ─────────────────────────────────────────────────────
 
     @Get("combo-equipamento")
     @RequiresModule("combo")
     findAllEquipamentos(@Req() req: AuthRequest) {
-        return this.service.findAllEquipamentos(req.user?.companyId);
+        return this.comboService.findAllEquipamentos(req.user?.companyId);
     }
 
     @Post("combo-equipamento")
     @RequiresModule("combo")
     createEquipamento(@Body() dto: CreateComboConsultDto) {
-        return this.service.createEquipamento(dto);
+        return this.comboService.createEquipamento(dto);
     }
 
     @Get("combo/:estabKey/equipamentos")
     @RequiresModule("combo")
     findEquipamentosByCombo(@Param("estabKey") estabKey: string) {
-        return this.service.findEquipamentosByCombo(estabKey);
+        return this.comboService.findEquipamentosByCombo(estabKey);
     }
 
     @Put("combo-equipamento/:id")
     @RequiresModule("combo")
     updateEquipamento(@Param("id") id: string, @Body() dto: UpdateComboConsultDto) {
-        return this.service.updateEquipamento(Number(id), dto);
+        return this.comboService.updateEquipamento(Number(id), dto);
     }
 
     @Delete("combo-equipamento/:id")
     @RequiresModule("combo")
     @HttpCode(204)
-    softDeleteEquipamento(@Param("id") id: string) { return this.service.softDeleteEquipamento(Number(id)); }
+    softDeleteEquipamento(@Param("id") id: string) { return this.comboService.softDeleteEquipamento(Number(id)); }
 
     // ── Hard delete hospital (admin) ──────────────────────────────────────────
 

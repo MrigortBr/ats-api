@@ -10,6 +10,7 @@ import { EmpresaProblem } from "./entities/empresa-problem.entity";
 import { EmpresaService } from "./empresa.service";
 import { EmpresaLockService } from "./empresa-lock.service";
 import { EmpresaProblemService } from "./empresa-problem.service";
+import { EmpresaPainelService } from "./empresa-painel.service";
 import { EmpresaController } from "./empresa.controller";
 import { EmpresaAdminService } from "./empresa-admin.service";
 import { EmpresaAdminController } from "./empresa-admin.controller";
@@ -26,7 +27,7 @@ import { EmpresaAdminController } from "./empresa-admin.controller";
             Role,
         ]),
     ],
-    providers: [EmpresaService, EmpresaLockService, EmpresaProblemService, EmpresaAdminService],
+    providers: [EmpresaService, EmpresaLockService, EmpresaProblemService, EmpresaPainelService, EmpresaAdminService],
     controllers: [EmpresaController, EmpresaAdminController],
 })
 export class EmpresaModule {}

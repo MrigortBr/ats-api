@@ -26,6 +26,8 @@ import { CotaGeralMunicipioModule } from "./modules/cota-geral-municipio/cota-ge
 import { CompanyModule } from "./modules/company/company.module";
 import { RoleModule } from "./modules/role/role.module";
 import { EmpresaModule } from "./modules/empresa/empresa.module";
+import { DocumentModule } from "./modules/document/document.module";
+import { TomoDocumentModule } from "./modules/tomo-document/tomo-document.module";
 
 @Module({
     controllers: [AppController],
@@ -64,6 +66,9 @@ import { EmpresaModule } from "./modules/empresa/empresa.module";
         RoleModule,
         // Empresa
         EmpresaModule,
+        // Documents (upload/download por módulo)
+        DocumentModule,
+        TomoDocumentModule,
     ],
 })
 export class AppModule {}

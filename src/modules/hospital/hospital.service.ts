@@ -366,4 +366,21 @@ export class HospitalService {
 
         return this.rnmRepo.save(record);
     }
+
+    // ── SELECTOR ─────────────────────────────────────────────────────────────────────────────
+
+    /** Lista resumida de hospitais para uso em dropdowns/seletores. */
+    async findAllForSelector() {
+        const list = await this.hospitalRepo.find({
+            relations: { uf: true },
+            order: { uf: { uf: "ASC" }, name: "ASC" },
+        });
+        return list.map(h => ({
+            id:           h.id,
+            name:         h.name,
+            cnes:         h.cnes,
+            municipality: h.municipality,
+            uf:           h.uf?.uf ?? "",
+        }));
+    }
 }

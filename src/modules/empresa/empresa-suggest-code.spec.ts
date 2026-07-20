@@ -6,7 +6,8 @@ import { Company } from "../company/entities/company.entity";
 import { EmpresaLockService } from "./empresa-lock.service";
 import { EmpresaProblemService } from "./empresa-problem.service";
 import { EmpresaProblem } from "./entities/empresa-problem.entity";
-import { Hospital } from "../hospital/entities/hospital.entity";
+import { HospitalService } from "../hospital/hospital.service";
+import { HospitalComboService } from "../hospital/hospital-combo.service";
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 
@@ -40,10 +41,12 @@ function makeService(
     return new EmpresaService(
         consultRepo,
         {} as Repository<EmpresaProblem>,
-        {} as Repository<Hospital>,
         companyRepo,
+        {} as HospitalService,
+        {} as HospitalComboService,
         {} as EmpresaLockService,
         {} as EmpresaProblemService,
+        {} as any,
     );
 }
 

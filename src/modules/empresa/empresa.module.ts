@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { EmailModule } from "../email/email.module";
+import { HospitalModule } from "../hospital/hospital.module";
 import { ComboConsult } from "../hospital/entities/combo-consult.entity";
-import { Hospital } from "../hospital/entities/hospital.entity";
 import { Company } from "../company/entities/company.entity";
 import { Users } from "../auth/entities/user.entity";
 import { Role } from "../role/entities/role.entity";
@@ -18,9 +18,9 @@ import { EmpresaAdminController } from "./empresa-admin.controller";
 @Module({
     imports: [
         EmailModule,
+        HospitalModule,
         TypeOrmModule.forFeature([
             ComboConsult,
-            Hospital,
             Company,
             EmpresaProblem,
             Users,

@@ -18,6 +18,8 @@ import { CibDocument } from "../modules/cib/entities/cib-document.entity";
 import { RnmDocument } from "../modules/rnm-document/entities/rnm-document.entity";
 import { CotaGeralMunicipio } from "../modules/cota-geral-municipio/entities/cota-geral-municipio.entity";
 import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.entity";
+import { Document } from "../modules/document/entities/document.entity";
+import { TomoDocument } from "../modules/tomo-document/entities/tomo-document.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -31,6 +33,8 @@ export const DB_ENTITIES: EntityClass[] = [
     Hospital, HospitalTomo, HospitalRnm, ComboConsult,
     CibDocument, RnmDocument, CotaGeralMunicipio,
     EmpresaProblem,
+    Document,
+    TomoDocument,
 ];
 
 export const DB_BASE_OPTIONS = {

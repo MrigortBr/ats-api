@@ -14,7 +14,7 @@ import {
     RnmDocumentController,
 } from "./document.controller";
 
-const UPLOADS_ROOT = process.env["UPLOADS_ROOT"] ?? join(process.cwd(), "uploads");
+const UPLOADS_ROOT = process.env["UPLOADS_ROOT"] ?? "/atslog/uploads";
 
 /**
  * Extrai o módulo e o entityId do caminho da requisição.

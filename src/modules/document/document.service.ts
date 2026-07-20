@@ -53,8 +53,11 @@ export class DocumentService {
         // file.path já é o caminho no volume (configurado pelo Multer DiskStorage)
         const storedPath = file.path;
 
+        // Multer lê o header como latin-1; decodifica para UTF-8 corretamente
+        const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+
         const doc = this.docRepo.create({
-            originalName: file.originalname,
+            originalName,
             storedPath,
             mimeType: file.mimetype,
             documentType,
@@ -71,25 +74,51 @@ export class DocumentService {
 
     // ── LIST ──────────────────────────────────────────────────────────────────
 
+    /**
+     * Filtra registros cujo arquivo físico não existe mais no volume
+     * e remove-os do banco automaticamente (reconciliação passiva).
+     */
+    private async purgeOrphans(docs: Document[]): Promise<Document[]> {
+        const alive: Document[] = [];
+        const orphans: Document[] = [];
+
+        for (const doc of docs) {
+            if (existsSync(doc.storedPath)) {
+                alive.push(doc);
+            } else {
+                orphans.push(doc);
+            }
+        }
+
+        if (orphans.length > 0) {
+            await this.docRepo.remove(orphans);
+        }
+
+        return alive;
+    }
+
     async findByConsult(consultId: number): Promise<Document[]> {
-        return this.docRepo.find({
+        const docs = await this.docRepo.find({
             where: { consultId },
             order: { uploadedAt: "DESC" },
         });
+        return this.purgeOrphans(docs);
     }
 
     async findByTomo(tomoId: number): Promise<Document[]> {
-        return this.docRepo.find({
+        const docs = await this.docRepo.find({
             where: { tomoId },
             order: { uploadedAt: "DESC" },
         });
+        return this.purgeOrphans(docs);
     }
 
     async findByRnm(rnmId: number): Promise<Document[]> {
-        return this.docRepo.find({
+        const docs = await this.docRepo.find({
             where: { rnmId },
             order: { uploadedAt: "DESC" },
         });
+        return this.purgeOrphans(docs);
     }
 
     // ── DOWNLOAD ──────────────────────────────────────────────────────────────
@@ -99,7 +128,11 @@ export class DocumentService {
         if (!doc) throw new NotFoundException(`Documento ${id} não encontrado`);
 
         if (!existsSync(doc.storedPath)) {
-            throw new NotFoundException(`Arquivo físico não encontrado para o documento ${id}`);
+            // arquivo sumiu do volume — remove o metadado órfão e informa o cliente
+            await this.docRepo.remove(doc);
+            throw new NotFoundException(
+                `Arquivo não encontrado no volume. O registro foi removido automaticamente.`,
+            );
         }
 
         const stream = new StreamableFile(createReadStream(doc.storedPath), {

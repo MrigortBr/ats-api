@@ -74,7 +74,7 @@ export class DocumentController {
 
     @Delete(":id")
     removeCombo(@Param("id", ParseIntPipe) id: number) {
-        return this.service.softDelete(id);
+        return this.service.hardDelete(id);
     }
 }
 
@@ -125,7 +125,7 @@ export class TomoDocumentController {
 
     @Delete(":id")
     removeTomo(@Param("id", ParseIntPipe) id: number) {
-        return this.service.softDelete(id);
+        return this.service.hardDelete(id);
     }
 }
 
@@ -176,6 +176,6 @@ export class RnmDocumentController {
 
     @Delete(":id")
     removeRnm(@Param("id", ParseIntPipe) id: number) {
-        return this.service.softDelete(id);
+        return this.service.hardDelete(id);
     }
 }

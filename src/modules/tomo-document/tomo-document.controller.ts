@@ -2,26 +2,16 @@ import {
     Controller, Delete, Get, Param, Post,
     Req, StreamableFile, UploadedFile, UseGuards, UseInterceptors,
 } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Request } from "express";
 import { TomoDocumentService } from "./tomo-document.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
-
-interface MulterFile {
-    fieldname: string;
-    originalname: string;
-    encoding: string;
-    mimetype: string;
-    size: number;
-    buffer: Buffer;
-}
+import type { MulterFile } from "../../common/types/multer-file.type";
 
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("tomo")
-@SkipThrottle()
 @Controller("/tomo-doc")
 export class TomoDocumentController {
     constructor(private readonly service: TomoDocumentService) {}

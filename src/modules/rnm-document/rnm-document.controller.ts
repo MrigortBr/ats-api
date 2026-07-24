@@ -2,25 +2,15 @@ import {
     Controller, Delete, Get, Param, Post,
     Req, StreamableFile, UploadedFile, UseGuards, UseInterceptors,
 } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Request } from "express";
 import { RnmDocumentService } from "./rnm-document.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
-
-interface MulterFile {
-    fieldname: string;
-    originalname: string;
-    encoding: string;
-    mimetype: string;
-    size: number;
-    buffer: Buffer;
-}
+import type { MulterFile } from "../../common/types/multer-file.type";
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("tomo")
-@SkipThrottle()
 @Controller("/rnm-doc")
 export class RnmDocumentController {
     constructor(private readonly service: RnmDocumentService) {}

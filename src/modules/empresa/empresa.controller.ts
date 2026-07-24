@@ -3,7 +3,6 @@ import {
     Param, ParseIntPipe, Post, Put, Query, Req, UseGuards,
     ForbiddenException,
 } from "@nestjs/common";
-import type { Request } from "express";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
@@ -18,10 +17,7 @@ import {
     CreateAdminEquipamentoDto,
     CreateComboCompletoDto,
 } from "./dto/empresa.dto";
-
-interface AuthRequest extends Request {
-    user?: { id: number; email: string; modules: string[]; companyId?: number | null };
-}
+import type { AuthRequest } from "../../common/types/auth-request.type";
 
 function requireCompany(req: AuthRequest): number {
     const id = req.user?.companyId;

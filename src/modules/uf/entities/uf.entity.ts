@@ -19,4 +19,7 @@ export class Uf {
 
     @Column({ type: "varchar", nullable: true })
     region!: string | null;
+
+    @Column({ name: "has_fluxo", type: "boolean", default: false })
+    hasFluxo!: boolean;
 }

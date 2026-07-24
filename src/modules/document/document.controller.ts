@@ -14,23 +14,18 @@ import {
     Req,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { SkipThrottle } from "@nestjs/throttler";
-import type { Response, Request } from "express";
+import type { Response } from "express";
 import { DocumentService } from "./document.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { CompanyScopeGuard } from "../auth/guards/company-scope.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 import { DocumentType, COMBO_DOCUMENT_TYPES, TOMO_RNM_DOCUMENT_TYPES } from "./document-types";
-
-interface AuthRequest extends Request {
-    user?: { id: number; email: string; modules: string[]; companyId?: number | null };
-}
+import type { AuthRequest } from "../../common/types/auth-request.type";
 
 // ─── COMBO ────────────────────────────────────────────────────────────────────
 // Rota inclui :companyId para o CompanyScopeGuard validar acesso.
 
-@SkipThrottle()
 @UseGuards(JwtAuthGuard, ModuleGuard, CompanyScopeGuard)
 @RequiresModule("combo")
 @Controller("documents/combo/:companyId/consult/:consultId")
@@ -81,7 +76,6 @@ export class DocumentController {
 // ─── TOMO ─────────────────────────────────────────────────────────────────────
 // Sem :companyId — registros TOMO não são company-specific.
 
-@SkipThrottle()
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("tomo")
 @Controller("documents/tomo/:tomoId")
@@ -132,7 +126,6 @@ export class TomoDocumentController {
 // ─── RNM ──────────────────────────────────────────────────────────────────────
 // Sem :companyId — registros RNM não são company-specific.
 
-@SkipThrottle()
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("rnm")
 @Controller("documents/rnm/:rnmId")

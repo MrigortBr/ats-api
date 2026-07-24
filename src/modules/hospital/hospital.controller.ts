@@ -1,19 +1,13 @@
-import { SkipThrottle } from "@nestjs/throttler";
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, UseGuards } from "@nestjs/common";
-import type { Request } from "express";
 import { HospitalService } from "./hospital.service";
 import { HospitalComboService } from "./hospital-combo.service";
 import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, CreateComboConsultDto, UpdateComboConsultDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
-
-interface AuthRequest extends Request {
-    user?: { id: number; email: string; roleId?: number | null; modules: string[]; companyId?: number | null };
-}
+import type { AuthRequest } from "../../common/types/auth-request.type";
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("tomo")
-@SkipThrottle()
 @Controller("/hospital")
 export class HospitalController {
     constructor(

@@ -1,4 +1,3 @@
-import { SkipThrottle } from "@nestjs/throttler";
 import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from "@nestjs/common";
 import { CotaGeralService } from "./cota-geral.service";
 import { UpdateCotaGeralDto } from "./dto/cota-geral.dto";
@@ -13,7 +12,6 @@ const EXAMPLE = {
 };
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("transporte")
-@SkipThrottle()
 @Controller("/cota-geral")
 export class CotaGeralController {
     constructor(private readonly service: CotaGeralService) {}

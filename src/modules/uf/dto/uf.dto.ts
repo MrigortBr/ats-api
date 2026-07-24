@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsIn, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsIn, IsOptional, IsString } from "class-validator";
 
 export class UpdateUfDto {
     @ApiPropertyOptional({ example: "ESTADO" })
@@ -9,4 +9,8 @@ export class UpdateUfDto {
     @ApiPropertyOptional({ enum: ["Sim", "Nao", "Em andamento"] })
     @IsOptional() @IsIn(["Sim", "Nao", "Em andamento"])
     cib?: string | null;
+
+    @ApiPropertyOptional({ example: true })
+    @IsOptional() @IsBoolean()
+    hasFluxo?: boolean;
 }

@@ -2,25 +2,15 @@ import {
     Controller, Delete, Get, Param, Post,
     Req, StreamableFile, UploadedFile, UseGuards, UseInterceptors,
 } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Request } from "express";
-
-interface MulterFile {
-    fieldname: string;
-    originalname: string;
-    encoding: string;
-    mimetype: string;
-    size: number;
-    buffer: Buffer;
-}
 import { CibService } from "./cib.service";
+import type { MulterFile } from "../../common/types/multer-file.type";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("transporte")
-@SkipThrottle()
 @Controller("/cib")
 export class CibController {
     constructor(private readonly service: CibService) {}

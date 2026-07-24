@@ -1,4 +1,3 @@
-import { SkipThrottle } from "@nestjs/throttler";
 import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from "@nestjs/common";
 import { EntregaService } from "./entrega.service";
 import { UpdateEntregaDto } from "./dto/entrega.dto";
@@ -21,7 +20,6 @@ const EXAMPLE = {
 };
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("transporte")
-@SkipThrottle()
 @Controller("/entrega")
 export class EntregaController {
     constructor(private readonly service: EntregaService) {}

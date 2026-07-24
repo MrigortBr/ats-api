@@ -1,4 +1,3 @@
-import { SkipThrottle } from "@nestjs/throttler";
 import { Controller, Get, Param, ParseIntPipe, UseGuards } from "@nestjs/common";
 import { ConsolidadoService } from "./consolidado.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -13,7 +12,6 @@ const EXAMPLE = {
 };
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("transporte")
-@SkipThrottle()
 @Controller("/consolidado")
 export class ConsolidadoController {
     constructor(private readonly service: ConsolidadoService) {}

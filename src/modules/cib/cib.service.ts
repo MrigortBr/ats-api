@@ -2,15 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CibDocument } from "./entities/cib-document.entity";
-
-interface MulterFile {
-    fieldname: string;
-    originalname: string;
-    encoding: string;
-    mimetype: string;
-    size: number;
-    buffer: Buffer;
-}
+import { MulterFile } from "../../common/types/multer-file.type";
 
 @Injectable()
 export class CibService {

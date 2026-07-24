@@ -4,13 +4,14 @@ import { DataSource } from "typeorm";
 import { configDotenv } from "dotenv";
 import * as bcrypt from "bcrypt";
 import { Users } from "../../modules/auth/entities/user.entity";
+import { Role } from "../../modules/role/entities/role.entity";
+import { RoleModule } from "../../modules/role/entities/role-module.entity";
+import { Company } from "../../modules/company/entities/company.entity";
 import { generatePassword, generateLogin } from "../../common/utils/generate-credentials";
 import { Uf } from "../../modules/uf/entities/uf.entity";
 import { TransportRtx } from "../../modules/transport-rtx/entities/transport-rtx.entity";
 import { TransportTrs } from "../../modules/transport-trs/entities/transport-trs.entity";
 import { GeneralQuota } from "../../modules/general-quota/entities/general-quota.entity";
-import { DeliveredRtxTrs } from "../../modules/delivered-rtx-trs/entities/delivered-rtx-trs.entity";
-import { DeliveredGeneralQuota } from "../../modules/delivered-general-quota/entities/delivered-general-quota.entity";
 import { TransportValue } from "../../modules/transport-value/entities/transport-value.entity";
 
 configDotenv();
@@ -23,7 +24,7 @@ const dataSource = new DataSource({
     password: String(process.env.DB_PASSWORD),
     database: process.env.DB_DATABASE,
     schema: "public",
-    entities: [Users, Uf, TransportRtx, TransportTrs, GeneralQuota, DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue],
+    entities: [Users, Role, RoleModule, Company, Uf, TransportRtx, TransportTrs, GeneralQuota, TransportValue],
     synchronize: false,
 });
 
@@ -177,65 +178,6 @@ const DELIVERED_RTX_DATA: Record<string, { van: number; ambulance: number; minib
     // TO: { van: 4,  ambulance: 4,  minibus: 2  },
 };
 
-const DELIVERED_RTX_TRS_DATA: Record<string, { van: number; ambulance: number; microbus: number }> = {
-    AC: { van: 0,  ambulance: 0, microbus: 0  },
-    AL: { van: 0,  ambulance: 0, microbus: 8  },
-    AM: { van: 0,  ambulance: 0, microbus: 0  },
-    AP: { van: 0,  ambulance: 0, microbus: 0  },
-    BA: { van: 35, ambulance: 0, microbus: 51 },
-    CE: { van: 22, ambulance: 0, microbus: 38 },
-    DF: { van: 0,  ambulance: 0, microbus: 0  },
-    ES: { van: 10, ambulance: 0, microbus: 8  },
-    GO: { van: 0,  ambulance: 0, microbus: 0  },
-    MA: { van: 15, ambulance: 0, microbus: 0  },
-    MG: { van: 0,  ambulance: 0, microbus: 0  },
-    MS: { van: 0,  ambulance: 0, microbus: 0  },
-    MT: { van: 0,  ambulance: 0, microbus: 0  },
-    PA: { van: 28, ambulance: 0, microbus: 20 },
-    PB: { van: 15, ambulance: 0, microbus: 15 },
-    PE: { van: 0,  ambulance: 0, microbus: 0  },
-    PI: { van: 0,  ambulance: 0, microbus: 0  },
-    PR: { van: 0,  ambulance: 0, microbus: 0  },
-    RJ: { van: 0,  ambulance: 0, microbus: 0  },
-    RN: { van: 0,  ambulance: 0, microbus: 0  },
-    RO: { van: 0,  ambulance: 0, microbus: 0  },
-    RR: { van: 0,  ambulance: 0, microbus: 0  },
-    RS: { van: 0,  ambulance: 0, microbus: 0  },
-    SC: { van: 0,  ambulance: 0, microbus: 0  },
-    SE: { van: 10, ambulance: 0, microbus: 5  },
-    SP: { van: 0,  ambulance: 0, microbus: 0  },
-    TO: { van: 0,  ambulance: 0, microbus: 0  },
-};
-
-const DELIVERED_GQ_DATA: Record<string, { van: number; ambulance: number; microbus: number }> = {
-    AC: { van: 0,  ambulance: 0, microbus: 0  },
-    AL: { van: 3,  ambulance: 0, microbus: 33 },
-    AM: { van: 0,  ambulance: 0, microbus: 0  },
-    AP: { van: 0,  ambulance: 0, microbus: 0  },
-    BA: { van: 0,  ambulance: 0, microbus: 65 },
-    CE: { van: 0,  ambulance: 0, microbus: 0  },
-    DF: { van: 0,  ambulance: 0, microbus: 0  },
-    ES: { van: 1,  ambulance: 0, microbus: 24 },
-    GO: { van: 5,  ambulance: 0, microbus: 31 },
-    MA: { van: 7,  ambulance: 0, microbus: 67 },
-    MG: { van: 0,  ambulance: 0, microbus: 0  },
-    MS: { van: 0,  ambulance: 0, microbus: 0  },
-    MT: { van: 0,  ambulance: 0, microbus: 0  },
-    PA: { van: 7,  ambulance: 0, microbus: 16 },
-    PB: { van: 40, ambulance: 0, microbus: 28 },
-    PE: { van: 11, ambulance: 0, microbus: 39 },
-    PI: { van: 0,  ambulance: 0, microbus: 0  },
-    PR: { van: 5,  ambulance: 0, microbus: 50 },
-    RJ: { van: 2,  ambulance: 0, microbus: 40 },
-    RN: { van: 0,  ambulance: 0, microbus: 0  },
-    RO: { van: 0,  ambulance: 0, microbus: 0  },
-    RR: { van: 0,  ambulance: 0, microbus: 0  },
-    RS: { van: 0,  ambulance: 0, microbus: 41 },
-    SC: { van: 0,  ambulance: 0, microbus: 30 },
-    SE: { van: 5,  ambulance: 0, microbus: 23 },
-    SP: { van: 11, ambulance: 0, microbus: 63 },
-    TO: { van: 0,  ambulance: 0, microbus: 0  },
-};
 
 async function seed() {
     await dataSource.initialize();
@@ -244,6 +186,7 @@ async function seed() {
     const hashAmount = Number(process.env.HASH_AMOUNT ?? 12);
 
     const userRepo = dataSource.getRepository(Users);
+    const roleRepo = dataSource.getRepository(Role);
     const adminEmail = "admin@ats.gov.br";
     const existing = await userRepo.findOne({ where: { email: adminEmail } });
     if (!existing) {
@@ -298,26 +241,6 @@ async function seed() {
         console.log("  - general_quota ja possui dados, pulando.");
     }
 
-    const deliveredRtxTrsRepo = dataSource.getRepository(DeliveredRtxTrs);
-    await dataSource.query('TRUNCATE TABLE delivered_rtx_trs RESTART IDENTITY CASCADE');
-    await deliveredRtxTrsRepo.save(ufRecords.map((u) => {
-        const d = DELIVERED_RTX_TRS_DATA[u.uf] ?? { van: 0, ambulance: 0, microbus: 0 };
-        return deliveredRtxTrsRepo.create({
-            ufId: u.id,
-            van:      d.van,
-            ambulance: d.ambulance,
-            minibus:  d.microbus,
-        });
-    }));
-    console.log("  + " + ufRecords.length + " registros atualizados em delivered_rtx_trs");
-
-    const deliveredGqRepo = dataSource.getRepository(DeliveredGeneralQuota);
-    await dataSource.query('TRUNCATE TABLE delivered_general_quota RESTART IDENTITY CASCADE');
-    await deliveredGqRepo.save(ufRecords.map((u) => {
-        const d = DELIVERED_GQ_DATA[u.uf] ?? { van: 0, ambulance: 0, microbus: 0 };
-        return deliveredGqRepo.create({ ufId: u.id, van: d.van, ambulance: d.ambulance, microbus: d.microbus });
-    }));
-    console.log("  + " + ufRecords.length + " registros atualizados em delivered_general_quota");
 
     const transportValueRepo = dataSource.getRepository(TransportValue);
     if ((await transportValueRepo.count()) === 0) {
@@ -333,7 +256,7 @@ async function seed() {
 
     // --- Usuarios extras ---
     // email e gerado automaticamente como nome.sobrenome@saude.gov.br
-    const USERS_TO_SEED: { name: string; surname: string; role: "admin" | "gestor_transporte" | "gestor_tomo" | "gestor_all" | "gestor_all_combo" | "visualizador_transporte" | "visualizador_tomo" | "visualizador_all" }[] = [
+    const USERS_TO_SEED: { name: string; surname: string; role: string }[] = [
         // { name: "Amanda", surname: "Chaves", role: "admin"  },
         // { name: "Igor",   surname: "Lins",  role: "admin" },
         // { name: "Juarez", surname: "Silva", role: "admin"  },
@@ -346,6 +269,8 @@ async function seed() {
         // { name: "Raquel", surname: "Machado", role: "visualizador_transporte" },
         // { name: "Crystina", surname: "Yamamoto", role: "visualizador_transporte" },
         // { name: "Diana", surname: "Pereira", role: "gestor_all_combo" },
+        { name: "Marta",  surname: "Peres",    role: "gestor_geral" },
+        { name: "Erico",  surname: "Cordeiro", role: "gestor_geral" },
     ];
 
     if (USERS_TO_SEED.length > 0) {
@@ -356,11 +281,14 @@ async function seed() {
             if (!alreadyExists) {
                 const plain = generatePassword(u.name, u.surname);
                 const hashed = await bcrypt.hash(plain, hashAmount);
+                const role = await roleRepo.findOne({ where: { name: u.role } });
+                if (!role) throw new Error(`Role "${u.role}" não encontrada no banco. Rode o seed de roles antes.`);
                 await userRepo.save(userRepo.create({
                     name: u.name,
                     surname: u.surname,
                     email,
                     password: hashed,
+                    roleId: role.id,
                 }));
                 if (process.env.SEND_EMAIL !== "false") {
                     await sendCredentialsEmail({
@@ -371,7 +299,7 @@ async function seed() {
                 } else {
                     console.log("    (email desabilitado — SEND_EMAIL=false)");
                 }
-                console.log("    + " + email + " | " + plain);
+                console.log("    + " + email + " | role=" + role.name + " | " + plain);
             } else {
                 console.log("    - " + email + " ja existe, pulando.");
             }

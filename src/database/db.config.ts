@@ -16,6 +16,7 @@ import { HospitalRnm } from "../modules/hospital/entities/hospital-rnm.entity";
 import { ComboConsult } from "../modules/hospital/entities/combo-consult.entity";
 import { CibDocument } from "../modules/cib/entities/cib-document.entity";
 import { RnmDocument } from "../modules/rnm-document/entities/rnm-document.entity";
+import { UfFluxoComentario } from "../modules/uf/entities/uf-fluxo-comentario.entity";
 import { CotaGeralMunicipio } from "../modules/cota-geral-municipio/entities/cota-geral-municipio.entity";
 import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.entity";
 import { Document } from "../modules/document/entities/document.entity";
@@ -35,6 +36,7 @@ export const DB_ENTITIES: EntityClass[] = [
     EmpresaProblem,
     Document,
     TomoDocument,
+    UfFluxoComentario,
 ];
 
 export const DB_BASE_OPTIONS = {

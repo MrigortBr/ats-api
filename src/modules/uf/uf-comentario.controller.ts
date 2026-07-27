@@ -32,7 +32,7 @@ export class UfComentarioController {
         @Req() req: AuthRequest,
     ) {
         const autor = req.user?.name ?? req.user?.email ?? "Usuário";
-        return this.service.createComentario(Number(ufId), dto.texto, String(autor));
+        return this.service.createComentario(Number(ufId), dto.texto, String(autor), dto.url);
     }
 
     /** Excluir comentário */

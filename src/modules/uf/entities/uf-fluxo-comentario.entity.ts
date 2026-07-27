@@ -16,6 +16,9 @@ export class UfFluxoComentario {
     @Column({ type: "text" })
     texto!: string;
 
+    @Column({ type: "varchar", nullable: true, default: null })
+    url!: string | null;
+
     @Column({ type: "varchar" })
     autor!: string;
 

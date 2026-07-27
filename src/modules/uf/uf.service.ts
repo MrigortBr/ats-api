@@ -36,9 +36,9 @@ export class UfService {
         return this.comentarioRepo.find({ where: { ufId }, order: { createdAt: "DESC" } });
     }
 
-    async createComentario(ufId: number, texto: string, autor: string): Promise<UfFluxoComentario> {
+    async createComentario(ufId: number, texto: string, autor: string, url?: string): Promise<UfFluxoComentario> {
         await this.findById(ufId); // garante que a UF existe
-        const comentario = this.comentarioRepo.create({ ufId, texto, autor });
+        const comentario = this.comentarioRepo.create({ ufId, texto, autor, url: url ?? null });
         return this.comentarioRepo.save(comentario);
     }
 

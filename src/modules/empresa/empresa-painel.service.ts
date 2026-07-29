@@ -16,9 +16,10 @@ export class EmpresaPainelService {
     async findAdminPainelMinDate(): Promise<{ minDate: string }> {
         const result = await this.consultRepo
             .createQueryBuilder("cc")
-            .select("MIN(cc.created_at)", "minDate")
+            .select("MIN(TO_DATE(cc.delivery_date, 'DD/MM/YYYY'))", "minDate")
             .where("cc.deleted_at IS NULL")
             .andWhere("cc.company_id IS NOT NULL")
+            .andWhere("cc.delivery_date IS NOT NULL")
             .getRawOne<{ minDate: string | null }>();
         const minDate = result?.minDate
             ? new Date(result.minDate).toISOString().slice(0, 10)
@@ -59,46 +60,102 @@ export class EmpresaPainelService {
         }));
     }
 
-    async findAdminPainel() {
-        const rows = await this.consultRepo
+    async findAdminPainel(inicio?: string, fim?: string) {
+        const qb = this.consultRepo
             .createQueryBuilder("cc")
             .leftJoin("cc.company", "c")
-            .select("cc.combo_type",         "combo_type")
+            .select("cc.combo_code",          "combo_code")
+            .addSelect("cc.combo_type",       "combo_type")
             .addSelect("cc.delivery_status",  "delivery_status")
+            .addSelect("cc.delivery_date",    "delivery_date")
             .addSelect("COALESCE(cc.equipment_count, 0)", "equipment_count")
             .addSelect("c.id",               "company_id")
             .addSelect("c.name",             "company_name")
             .addSelect("c.trade_name",        "company_trade_name")
             .where("cc.deleted_at IS NULL")
-            .andWhere("cc.company_id IS NOT NULL")
-            .getRawMany<{
-                combo_type:          string | null;
-                delivery_status:     string | null;
-                equipment_count:     string;
-                company_id:          string | null;
-                company_name:        string | null;
-                company_trade_name:  string | null;
-            }>();
+            .andWhere("cc.company_id IS NOT NULL");
 
-        const byType = new Map<string, { total: number; delivered: number; totalEquip: number; deliveredEquip: number }>();
-        const byComp = new Map<string, { name: string; group: string; total: number; delivered: number }>();
+        if (inicio)
+            qb.andWhere(
+                "(cc.delivery_date IS NULL OR TO_DATE(cc.delivery_date, 'DD/MM/YYYY') >= :inicio::date)",
+                { inicio },
+            );
+        if (fim)
+            qb.andWhere(
+                "(cc.delivery_date IS NULL OR TO_DATE(cc.delivery_date, 'DD/MM/YYYY') <= :fim::date)",
+                { fim },
+            );
+
+        const rows = await qb.getRawMany<{
+            combo_code:          string | null;
+            combo_type:          string | null;
+            delivery_status:     string | null;
+            delivery_date:       string | null;
+            equipment_count:     string;
+            company_id:          string | null;
+            company_name:        string | null;
+            company_trade_name:  string | null;
+        }>();
+
+        // Agrupa por combo_code para que cada combo único conte uma vez nos totais.
+        // Equipamentos ainda são somados por linha (equipment_count por row).
+        type ComboEntry = {
+            group: string;
+            delivered: boolean;
+            hasDate: boolean;
+            companyId: string | null;
+            companyName: string;
+            totalEquip: number;
+            deliveredEquip: number;
+        };
+        const comboMap = new Map<string, ComboEntry>();
+        let rowIdx = 0;
 
         for (const r of rows) {
             const group       = r.combo_type?.includes("OFTALMO") ? "OFTALMO" : "CIRURGIA";
             const equip       = Number(r.equipment_count) || 0;
-            const isDelivered = (r.delivery_status ?? "").toLowerCase().includes("entregue");
+            const isDelivered = !!r.delivery_date && (r.delivery_status ?? "").toLowerCase().includes("entregue");
+            // Chave composta: combo_code pode repetir entre empresas diferentes
+            const key = r.combo_code && r.company_id
+                ? `${r.company_id}::${r.combo_code}`
+                : `__row_${rowIdx++}`;
 
-            const t = byType.get(group) ?? { total: 0, delivered: 0, totalEquip: 0, deliveredEquip: 0 };
+            if (!comboMap.has(key)) {
+                comboMap.set(key, {
+                    group,
+                    delivered:     isDelivered,
+                    hasDate:       !!r.delivery_date,
+                    companyId:     r.company_id,
+                    companyName:   r.company_trade_name ?? r.company_name ?? "",
+                    totalEquip:    equip,
+                    deliveredEquip: isDelivered ? equip : 0,
+                });
+            } else {
+                const entry = comboMap.get(key)!;
+                entry.totalEquip    += equip;
+                if (isDelivered) { entry.delivered = true; entry.deliveredEquip += equip; }
+                if (r.delivery_date) entry.hasDate = true;
+            }
+        }
+
+        const byType = new Map<string, { total: number; delivered: number; totalEquip: number; deliveredEquip: number }>();
+        const byComp = new Map<string, { name: string; group: string; total: number; delivered: number }>();
+        let semData = 0;
+
+        for (const entry of comboMap.values()) {
+            if (!entry.hasDate) semData++;
+
+            const t = byType.get(entry.group) ?? { total: 0, delivered: 0, totalEquip: 0, deliveredEquip: 0 };
             t.total++;
-            t.totalEquip += equip;
-            if (isDelivered) { t.delivered++; t.deliveredEquip += equip; }
-            byType.set(group, t);
+            t.totalEquip    += entry.totalEquip;
+            if (entry.delivered) { t.delivered++; t.deliveredEquip += entry.deliveredEquip; }
+            byType.set(entry.group, t);
 
-            if (r.company_id) {
-                const comp = byComp.get(r.company_id) ?? { name: r.company_trade_name ?? r.company_name ?? "", group, total: 0, delivered: 0 };
-                comp.total += equip;
-                if (isDelivered) comp.delivered += equip;
-                byComp.set(r.company_id, comp);
+            if (entry.companyId) {
+                const comp = byComp.get(entry.companyId) ?? { name: entry.companyName, group: entry.group, total: 0, delivered: 0 };
+                comp.total    += entry.totalEquip;
+                if (entry.delivered) comp.delivered += entry.deliveredEquip;
+                byComp.set(entry.companyId, comp);
             }
         }
 
@@ -122,6 +179,6 @@ export class EmpresaPainelService {
             percentPendentes:      c.total ? Math.round(((c.total - c.delivered) / c.total) * 100) : 0,
         }));
 
-        return { porTipoCombo, porEmpresa };
+        return { porTipoCombo, porEmpresa, semData };
     }
 }

@@ -210,7 +210,10 @@ export class EmpresaController {
 
     @Get("admin/painel")
     @RequiresModule("admin")
-    adminPainel() {
-        return this.service.findAdminPainel();
+    adminPainel(
+        @Query("inicio") inicio?: string,
+        @Query("fim")    fim?:    string,
+    ) {
+        return this.service.findAdminPainel(inicio, fim);
     }
 }

@@ -6,7 +6,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
-import { RoleModule } from "./role-module.entity";
+import type { RoleModule } from "./role-module.entity";
 
 @Entity("roles")
 export class Role {
@@ -20,7 +20,8 @@ export class Role {
     @Column({ type: "varchar", nullable: true })
     description!: string | null;
 
-    @OneToMany(() => RoleModule, (rm) => rm.role, { eager: true })
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    @OneToMany(() => require("./role-module.entity").RoleModule, (rm: RoleModule) => rm.role, { eager: true })
     roleModules!: RoleModule[];
 
     @CreateDateColumn({ name: "created_at" })

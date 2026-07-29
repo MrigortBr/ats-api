@@ -301,8 +301,8 @@ export class EmpresaService {
         return this.painelService.findAdminPainelMinDate();
     }
 
-    findAdminPainel() {
-        return this.painelService.findAdminPainel();
+    findAdminPainel(inicio?: string, fim?: string) {
+        return this.painelService.findAdminPainel(inicio, fim);
     }
 
     // ── Hospitais (delegado a HospitalService) ───────────────────────────────────

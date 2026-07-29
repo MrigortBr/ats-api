@@ -8,8 +8,8 @@ import {
     PrimaryGeneratedColumn,
 } from "typeorm";
 import { Uf } from "../../uf/entities/uf.entity";
-import { HospitalTomo } from "./hospital-tomo.entity";
-import { HospitalRnm } from "./hospital-rnm.entity";
+import type { HospitalTomo } from "./hospital-tomo.entity";
+import type { HospitalRnm } from "./hospital-rnm.entity";
 
 @Entity("hospital")
 export class Hospital {
@@ -47,10 +47,12 @@ export class Hospital {
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
 
-    @OneToOne(() => HospitalTomo, (t) => t.hospital)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    @OneToOne(() => require("./hospital-tomo.entity").HospitalTomo, (t: HospitalTomo) => t.hospital)
     tomo!: HospitalTomo | null;
 
-    @OneToOne(() => HospitalRnm, (r) => r.hospital)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    @OneToOne(() => require("./hospital-rnm.entity").HospitalRnm, (r: HospitalRnm) => r.hospital)
     rnm!: HospitalRnm | null;
 
 }

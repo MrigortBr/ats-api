@@ -11,7 +11,7 @@ import {
 } from "typeorm";
 import { Hospital } from "./hospital.entity";
 import { Company } from "../../company/entities/company.entity";
-import { ComboEquipamento } from "./combo-equipamento.entity";
+import type { ComboEquipamento } from "./combo-equipamento.entity";
 
 @Entity("hospital_combo")
 export class HospitalCombo {
@@ -100,7 +100,8 @@ export class HospitalCombo {
     @UpdateDateColumn({ name: "updated_at", nullable: true })
     updatedAt!: Date | null;
 
-    @OneToMany(() => ComboEquipamento, (e) => e.combo, { cascade: false })
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    @OneToMany(() => require("./combo-equipamento.entity").ComboEquipamento, (e: ComboEquipamento) => e.combo, { cascade: false })
     equipamentos!: ComboEquipamento[];
 
     @DeleteDateColumn({ name: "deleted_at", nullable: true })

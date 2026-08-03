@@ -13,6 +13,8 @@ import { TransportRtx } from "../../modules/transport-rtx/entities/transport-rtx
 import { TransportTrs } from "../../modules/transport-trs/entities/transport-trs.entity";
 import { GeneralQuota } from "../../modules/general-quota/entities/general-quota.entity";
 import { TransportValue } from "../../modules/transport-value/entities/transport-value.entity";
+import { DeliveredRtxTrs } from "../../modules/delivered-rtx-trs/entities/delivered-rtx-trs.entity";
+import { DeliveredGeneralQuota } from "../../modules/delivered-general-quota/entities/delivered-general-quota.entity";
 
 configDotenv();
 
@@ -24,7 +26,7 @@ const dataSource = new DataSource({
     password: String(process.env.DB_PASSWORD),
     database: process.env.DB_DATABASE,
     schema: "public",
-    entities: [Users, Role, RoleModule, Company, Uf, TransportRtx, TransportTrs, GeneralQuota, TransportValue],
+    entities: [Users, Role, RoleModule, Company, Uf, TransportRtx, TransportTrs, GeneralQuota, TransportValue, DeliveredRtxTrs, DeliveredGeneralQuota],
     synchronize: false,
 });
 
@@ -150,34 +152,18 @@ const GQ_DATA: Record<string, { van: number; ambulance: number; microbus: number
     ZZ: { van: 10, ambulance: 3,  microbus: 3   }, // "A Definir" — veículos sem UF definida
 };
 
+// Dados de entrega RTx+TRS extraídos do xlsx "RTx e TRS_ Lei 15.233 de 2025_Atualizado (5).xlsx"
+// Aba "Entrega RTx e TRS" — colunas I/J/K (ent_van / ent_amb / ent_micro)
+// Estados ausentes aqui não são sobrescritos pelo seed (preserva dados do UI)
 const DELIVERED_RTX_DATA: Record<string, { van: number; ambulance: number; minibus: number }> = {
-    // AC: { van: 2,  ambulance: 2,  minibus: 1  },
-    // AL: { van: 4,  ambulance: 4,  minibus: 2  },
-    // AM: { van: 6,  ambulance: 6,  minibus: 3  },
-    // AP: { van: 2,  ambulance: 2,  minibus: 1  },
-    // BA: { van: 18, ambulance: 18, minibus: 9  },
-    // CE: { van: 0,  ambulance: 10, minibus: 15 },
-    // DF: { van: 1,  ambulance: 1,  minibus: 1  },
-    // ES: { van: 3,  ambulance: 3,  minibus: 3  },
-    // GO: { van: 5,  ambulance: 5,  minibus: 5  },
-    // MA: { van: 6,  ambulance: 6,  minibus: 3  },
-    // MG: { van: 30, ambulance: 16, minibus: 2  },
-    // MS: { van: 4,  ambulance: 4,  minibus: 4  },
-    // MT: { van: 6,  ambulance: 6,  minibus: 6  },
-    // PA: { van: 8,  ambulance: 8,  minibus: 4  },
-    // PB: { van: 6,  ambulance: 6,  minibus: 3  },
-    // PE: { van: 8,  ambulance: 8,  minibus: 4  },
-    // PI: { van: 8,  ambulance: 8,  minibus: 4  },
-    // PR: { van: 8,  ambulance: 8,  minibus: 4  },
-    // RJ: { van: 4,  ambulance: 4,  minibus: 2  },
-    // RN: { van: 4,  ambulance: 4,  minibus: 2  },
-    // RO: { van: 0,  ambulance: 4,  minibus: 6  },
-    // RR: { van: 2,  ambulance: 2,  minibus: 1  },
-    // RS: { van: 14, ambulance: 14, minibus: 7  },
-    // SC: { van: 16, ambulance: 16, minibus: 8  },
-    // SE: { van: 2,  ambulance: 2,  minibus: 1  },
-    // SP: { van: 19, ambulance: 19, minibus: 19 },
-    // TO: { van: 4,  ambulance: 4,  minibus: 2  },
+    AL: { van: 0,  ambulance: 0, minibus: 8  },
+    BA: { van: 35, ambulance: 0, minibus: 51 },
+    CE: { van: 22, ambulance: 0, minibus: 38 },
+    ES: { van: 10, ambulance: 0, minibus: 8  },
+    MA: { van: 15, ambulance: 0, minibus: 0  },
+    PA: { van: 28, ambulance: 0, minibus: 20 },
+    PB: { van: 15, ambulance: 0, minibus: 15 },
+    SE: { van: 10, ambulance: 0, minibus: 5  },
 };
 
 
@@ -251,6 +237,39 @@ async function seed() {
         }
     }
     console.log("  ✓ general_quota: " + ufRecords.length + " registros sincronizados");
+
+    // ── delivered_rtx_trs: atualiza se há dado no xlsx; cria zerado se não existe ──
+    const deliveredRtxTrsRepo = dataSource.getRepository(DeliveredRtxTrs);
+    let deliveredRtxCreated = 0; let deliveredRtxUpdated = 0;
+    for (const u of ufRecords) {
+        const d = DELIVERED_RTX_DATA[u.uf];
+        const existing = await deliveredRtxTrsRepo.findOne({ where: { ufId: u.id } });
+        if (existing) {
+            if (d) {
+                // Tem dado no xlsx: atualiza
+                await deliveredRtxTrsRepo.update(existing.id, { van: d.van, ambulance: d.ambulance, minibus: d.minibus });
+                deliveredRtxUpdated++;
+            }
+            // Sem dado no xlsx: preserva o que está no banco (não toca)
+        } else {
+            // Não existe: cria com dado do xlsx ou zeros
+            await deliveredRtxTrsRepo.save(deliveredRtxTrsRepo.create({ ufId: u.id, van: d?.van ?? 0, ambulance: d?.ambulance ?? 0, minibus: d?.minibus ?? 0 }));
+            deliveredRtxCreated++;
+        }
+    }
+    console.log("  ✓ delivered_rtx_trs: " + deliveredRtxCreated + " criada(s), " + deliveredRtxUpdated + " atualizada(s)");
+
+    // ── delivered_general_quota: cria linha zerada se não existe (preserva dados existentes) ──
+    const deliveredGQRepo = dataSource.getRepository(DeliveredGeneralQuota);
+    let deliveredGQCreated = 0;
+    for (const u of ufRecords) {
+        const existing = await deliveredGQRepo.findOne({ where: { ufId: u.id } });
+        if (!existing) {
+            await deliveredGQRepo.save(deliveredGQRepo.create({ ufId: u.id, van: 0, ambulance: 0, microbus: 0 }));
+            deliveredGQCreated++;
+        }
+    }
+    console.log("  ✓ delivered_general_quota: " + deliveredGQCreated + " linha(s) criada(s), " + (ufRecords.length - deliveredGQCreated) + " já existiam");
 
 
     const transportValueRepo = dataSource.getRepository(TransportValue);

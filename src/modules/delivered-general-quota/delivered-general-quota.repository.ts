@@ -24,7 +24,10 @@ export class DeliveredGeneralQuotaRepository {
     }
 
     async updateByUfId(ufId: number, data: UpdateDeliveredGeneralQuotaDto): Promise<DeliveredGeneralQuota> {
-        const entity = await this.repo.findOneOrFail({ where: { ufId } });
+        let entity = await this.repo.findOne({ where: { ufId } });
+        if (!entity) {
+            entity = this.repo.create({ ufId, van: 0, ambulance: 0, microbus: 0 });
+        }
         Object.assign(entity, data);
         return this.repo.save(entity);
     }

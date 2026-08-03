@@ -20,7 +20,10 @@ export class DeliveredRtxTrsRepository {
     }
 
     async updateByUfId(ufId: number, data: UpdateDeliveredRtxTrsDto): Promise<DeliveredRtxTrs> {
-        const entity = await this.repo.findOneOrFail({ where: { ufId } });
+        let entity = await this.repo.findOne({ where: { ufId } });
+        if (!entity) {
+            entity = this.repo.create({ ufId, van: 0, ambulance: 0, minibus: 0 });
+        }
         Object.assign(entity, data);
         return this.repo.save(entity);
     }

@@ -30,6 +30,22 @@ function requireEmail(req: AuthRequest): string {
     if (!email) throw new ForbiddenException("Usuario sem email identificado");
     return email;
 }
+
+/**
+ * Permite acesso a endpoints de leitura admin para:
+ * - Usuários com módulo "admin"
+ * - Usuários com módulo "empresa" SEM company_id vinculado (supervisoras)
+ */
+function requireAdminOrSupervisor(req: AuthRequest): void {
+    const user = req.user;
+    if (!user) throw new ForbiddenException("Nao autenticado");
+    const mods: string[] = Array.isArray(user.modules) ? user.modules : [];
+    const isAdmin      = mods.includes("admin");
+    const isSupervisor = mods.includes("empresa") && !user.companyId;
+    if (!isAdmin && !isSupervisor) {
+        throw new ForbiddenException("Acesso restrito a administradores e supervisoras");
+    }
+}
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("empresa")
 @Controller("/empresa")
@@ -136,14 +152,14 @@ export class EmpresaController {
     }
 
     @Get("admin/companies")
-    @RequiresModule("admin")
-    adminCompanies() {
+    adminCompanies(@Req() req: AuthRequest) {
+        requireAdminOrSupervisor(req);
         return this.service.findAdminCompanies();
     }
 
     @Get("admin/relatorio")
-    @RequiresModule("admin")
-    adminRelatorio(@Query("companyId", ParseIntPipe) companyId: number) {
+    adminRelatorio(@Query("companyId", ParseIntPipe) companyId: number, @Req() req: AuthRequest) {
+        requireAdminOrSupervisor(req);
         return this.service.findAdminRelatorio(companyId);
     }
 
@@ -182,8 +198,8 @@ export class EmpresaController {
     }
 
     @Get("admin/contatos")
-    @RequiresModule("admin")
-    adminContatos(@Query("companyId", ParseIntPipe) companyId: number) {
+    adminContatos(@Query("companyId", ParseIntPipe) companyId: number, @Req() req: AuthRequest) {
+        requireAdminOrSupervisor(req);
         return this.service.findAdminContatos(companyId);
     }
 
@@ -197,23 +213,24 @@ export class EmpresaController {
     }
 
     @Get("admin/problemas")
-    @RequiresModule("admin")
-    adminProblemas(@Query("companyId", ParseIntPipe) companyId: number) {
+    adminProblemas(@Query("companyId", ParseIntPipe) companyId: number, @Req() req: AuthRequest) {
+        requireAdminOrSupervisor(req);
         return this.service.findAdminProblemas(companyId);
     }
 
     @Get("admin/painel/min-date")
-    @RequiresModule("admin")
-    adminPainelMinDate() {
+    adminPainelMinDate(@Req() req: AuthRequest) {
+        requireAdminOrSupervisor(req);
         return this.service.findAdminPainelMinDate();
     }
 
     @Get("admin/painel")
-    @RequiresModule("admin")
     adminPainel(
+        @Req() req: AuthRequest,
         @Query("inicio") inicio?: string,
         @Query("fim")    fim?:    string,
     ) {
+        requireAdminOrSupervisor(req);
         return this.service.findAdminPainel(inicio, fim);
     }
 }

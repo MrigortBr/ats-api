@@ -26,12 +26,12 @@ export class ModuleGuard implements CanActivate {
     constructor(private readonly reflector: Reflector) {}
 
     canActivate(context: ExecutionContext): boolean {
-        const requiredModule = this.reflector.getAllAndOverride<ModuleName | undefined>(
+        const requiredModules = this.reflector.getAllAndOverride<ModuleName[]>(
             MODULE_KEY,
             [context.getHandler(), context.getClass()],
         );
 
-        if (!requiredModule) return true;
+        if (!requiredModules?.length) return true;
 
         const request = context.switchToHttp().getRequest<{ user?: JwtUser; method: string }>();
         const user = request.user;
@@ -41,18 +41,22 @@ export class ModuleGuard implements CanActivate {
         // Admin é superusuário — acessa qualquer módulo sem restrição de leitura ou escrita.
         if (Array.isArray(user.modules) && user.modules.includes("admin")) return true;
 
-        const hasModule = Array.isArray(user.modules) && user.modules.includes(requiredModule);
-        if (!hasModule) {
+        // Aceita qualquer módulo da lista (lógica OR).
+        const matchedModule = Array.isArray(user.modules)
+            ? requiredModules.find(m => user.modules.includes(m))
+            : undefined;
+
+        if (!matchedModule) {
             throw new ForbiddenException(
-                `Acesso negado: modulo '${requiredModule}' nao disponivel para este usuario`,
+                `Acesso negado: nenhum dos modulos '${requiredModules.join(", ")}' disponivel para este usuario`,
             );
         }
 
         if (WRITE_METHODS.has(request.method)) {
-            const canWrite = Array.isArray(user.writeModules) && user.writeModules.includes(requiredModule);
+            const canWrite = Array.isArray(user.writeModules) && user.writeModules.includes(matchedModule);
             if (!canWrite) {
                 throw new ForbiddenException(
-                    `Permissao de escrita ausente: modulo '${requiredModule}' e somente leitura para este usuario`,
+                    `Permissao de escrita ausente: modulo '${matchedModule}' e somente leitura para este usuario`,
                 );
             }
         }

@@ -29,123 +29,125 @@ const dataSource = new DataSource({
 });
 
 const UF_STATES: { uf: string; state: string; agreement: string | null; cib: string | null }[] = [
-    // { uf: "AC", state: "Acre",                  agreement: "ESTADO",                                              cib: "Sim" },
-    // { uf: "AL", state: "Alagoas",               agreement: "MUNICIPIOS - NOMES NA CIB",                          cib: "Sim" },
-    // { uf: "AM", state: "Amazonas",              agreement: "DEFINICAO EM ANDAMENTO",                             cib: null },
-    // { uf: "AP", state: "Amapa",                 agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Sim" },
-    // { uf: "BA", state: "Bahia",                 agreement: "ESTADO",                                              cib: "Nao" },
-    // { uf: "CE", state: "Ceara",                 agreement: "ESTADO",                                              cib: "Nao" },
-    // { uf: "DF", state: "Distrito Federal",      agreement: "ESTADO",                                              cib: "Nao" },
-    // { uf: "ES", state: "Espirito Santo",        agreement: "ESTADO",                                              cib: "Nao" },
-    // { uf: "GO", state: "Goias",                 agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Sim" },
-    // { uf: "MA", state: "Maranhao",              agreement: "ESTADO",                                              cib: "Sim" },
-    // { uf: "MG", state: "Minas Gerais",          agreement: "ESTADO",                                              cib: "Sim" },
-    // { uf: "MS", state: "Mato Grosso do Sul",    agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
-    // { uf: "MT", state: "Mato Grosso",           agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
-    // { uf: "PA", state: "Para",                  agreement: "MUNICIPIOS - NOMES E TIPO DE TS EM ANEXO",           cib: "Sim" },
-    // { uf: "PB", state: "Paraiba",               agreement: "ESTADO E MUNICIPIOS - NOMES E TIPO DE TS EM ANEXO", cib: "Sim" },
-    // { uf: "PE", state: "Pernambuco",            agreement: "MUNICIPIOS",                                          cib: "Sim" },
-    // { uf: "PI", state: "Piaui",                 agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
-    // { uf: "PR", state: "Parana",                agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Sim" },
-    // { uf: "RJ", state: "Rio de Janeiro",        agreement: "DEFINICAO EM ANDAMENTO",                             cib: null },
-    // { uf: "RN", state: "Rio Grande do Norte",   agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
-    // { uf: "RO", state: "Rondonia",              agreement: "ESTADO",                                              cib: "Sim" },
-    // { uf: "RR", state: "Roraima",               agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
-    // { uf: "RS", state: "Rio Grande do Sul",     agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
-    // { uf: "SC", state: "Santa Catarina",        agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
-    // { uf: "SE", state: "Sergipe",               agreement: "MUNICIPIOS - NOMES E TIPO DE TS EM ANEXO",           cib: "Sim" },
-    // { uf: "SP", state: "Sao Paulo",             agreement: "MUNICIPIOS",                                          cib: "Em andamento" },
-    // { uf: "TO", state: "Tocantins",             agreement: "DEFINICAO EM ANDAMENTO",                             cib: "Nao" },
+    { uf: "AC", state: "Acre",                 agreement: "ESTADO",                                            cib: "Sim"          },
+    { uf: "AL", state: "Alagoas",              agreement: "MUNICIPIOS - NOMES NA CIB",                         cib: "Sim"          },
+    { uf: "AM", state: "Amazonas",             agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "AP", state: "Amapa",                agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Sim"          },
+    { uf: "BA", state: "Bahia",                agreement: "ESTADO",                                            cib: "Nao"          },
+    { uf: "CE", state: "Ceara",                agreement: "ESTADO",                                            cib: "Nao"          },
+    { uf: "DF", state: "Distrito Federal",     agreement: "ESTADO",                                            cib: "Nao"          },
+    { uf: "ES", state: "Espirito Santo",       agreement: "ESTADO",                                            cib: "Nao"          },
+    { uf: "GO", state: "Goias",                agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Sim"          },
+    { uf: "MA", state: "Maranhao",             agreement: "ESTADO",                                            cib: "Sim"          },
+    { uf: "MG", state: "Minas Gerais",         agreement: "ESTADO",                                            cib: "Sim"          },
+    { uf: "MS", state: "Mato Grosso do Sul",   agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "MT", state: "Mato Grosso",          agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "PA", state: "Para",                 agreement: "MUNICIPIOS - NOMES E TIPO DE TS EM ANEXO",          cib: "Sim"          },
+    { uf: "PB", state: "Paraiba",              agreement: "ESTADO E MUNICIPIOS - NOMES E TIPO DE TS EM ANEXO", cib: "Sim"          },
+    { uf: "PE", state: "Pernambuco",           agreement: "MUNICIPIOS",                                        cib: "Sim"          },
+    { uf: "PI", state: "Piaui",                agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "PR", state: "Parana",               agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Sim"          },
+    { uf: "RJ", state: "Rio de Janeiro",       agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "RN", state: "Rio Grande do Norte",  agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "RO", state: "Rondonia",             agreement: "ESTADO",                                            cib: "Sim"          },
+    { uf: "RR", state: "Roraima",              agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "RS", state: "Rio Grande do Sul",    agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "SC", state: "Santa Catarina",       agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "SE", state: "Sergipe",              agreement: "MUNICIPIOS - NOMES E TIPO DE TS EM ANEXO",          cib: "Sim"          },
+    { uf: "SP", state: "Sao Paulo",            agreement: "MUNICIPIOS",                                        cib: "Em andamento" },
+    { uf: "TO", state: "Tocantins",            agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
+    { uf: "ZZ", state: "A Definir",            agreement: null,                                                cib: null           },
 ];
 
 const RTX_DATA: Record<string, { van: number; ambulance: number; minibus: number }> = {
-    // AC: { van: 2,  ambulance: 2,  minibus: 1  },
-    // AL: { van: 4,  ambulance: 4,  minibus: 2  },
-    // AM: { van: 6,  ambulance: 6,  minibus: 3  },
-    // AP: { van: 2,  ambulance: 2,  minibus: 1  },
-    // BA: { van: 18, ambulance: 18, minibus: 9  },
-    // CE: { van: 0,  ambulance: 10, minibus: 15 },
-    // DF: { van: 1,  ambulance: 1,  minibus: 1  },
-    // ES: { van: 3,  ambulance: 3,  minibus: 3  },
-    // GO: { van: 5,  ambulance: 5,  minibus: 5  },
-    // MA: { van: 6,  ambulance: 6,  minibus: 3  },
-    // MG: { van: 30, ambulance: 16, minibus: 2  },
-    // MS: { van: 4,  ambulance: 4,  minibus: 4  },
-    // MT: { van: 6,  ambulance: 6,  minibus: 6  },
-    // PA: { van: 8,  ambulance: 8,  minibus: 4  },
-    // PB: { van: 6,  ambulance: 6,  minibus: 3  },
-    // PE: { van: 8,  ambulance: 8,  minibus: 4  },
-    // PI: { van: 8,  ambulance: 8,  minibus: 4  },
-    // PR: { van: 8,  ambulance: 8,  minibus: 4  },
-    // RJ: { van: 4,  ambulance: 4,  minibus: 2  },
-    // RN: { van: 4,  ambulance: 4,  minibus: 2  },
-    // RO: { van: 0,  ambulance: 4,  minibus: 6  },
-    // RR: { van: 2,  ambulance: 2,  minibus: 1  },
-    // RS: { van: 14, ambulance: 14, minibus: 7  },
-    // SC: { van: 16, ambulance: 16, minibus: 8  },
-    // SE: { van: 2,  ambulance: 2,  minibus: 1  },
-    // SP: { van: 19, ambulance: 19, minibus: 19 },
-    // TO: { van: 4,  ambulance: 4,  minibus: 2  },
+    AC: { van: 2,  ambulance: 2,  minibus: 1  },
+    AL: { van: 4,  ambulance: 4,  minibus: 2  },
+    AM: { van: 2,  ambulance: 4,  minibus: 1  },
+    AP: { van: 2,  ambulance: 2,  minibus: 1  },
+    BA: { van: 18, ambulance: 18, minibus: 9  },
+    CE: { van: 0,  ambulance: 10, minibus: 15 },
+    DF: { van: 1,  ambulance: 1,  minibus: 1  },
+    ES: { van: 3,  ambulance: 3,  minibus: 3  },
+    GO: { van: 5,  ambulance: 5,  minibus: 5  },
+    MA: { van: 6,  ambulance: 6,  minibus: 3  },
+    MG: { van: 30, ambulance: 16, minibus: 2  },
+    MS: { van: 4,  ambulance: 4,  minibus: 4  },
+    MT: { van: 6,  ambulance: 6,  minibus: 6  },
+    PA: { van: 8,  ambulance: 8,  minibus: 4  },
+    PB: { van: 6,  ambulance: 6,  minibus: 3  },
+    PE: { van: 8,  ambulance: 8,  minibus: 4  },
+    PI: { van: 8,  ambulance: 8,  minibus: 4  },
+    PR: { van: 8,  ambulance: 8,  minibus: 4  },
+    RJ: { van: 4,  ambulance: 4,  minibus: 2  },
+    RN: { van: 4,  ambulance: 4,  minibus: 2  },
+    RO: { van: 0,  ambulance: 4,  minibus: 6  },
+    RR: { van: 2,  ambulance: 2,  minibus: 1  },
+    RS: { van: 14, ambulance: 14, minibus: 7  },
+    SC: { van: 16, ambulance: 16, minibus: 8  },
+    SE: { van: 2,  ambulance: 2,  minibus: 1  },
+    SP: { van: 19, ambulance: 19, minibus: 19 },
+    TO: { van: 4,  ambulance: 4,  minibus: 2  },
 };
 
 const TRS_DATA: Record<string, { van: number; microbus: number }> = {
-    // AC: { van: 3,  microbus: 2  },
-    // AL: { van: 12, microbus: 6  },
-    // AM: { van: 11, microbus: 6  },
-    // AP: { van: 3,  microbus: 1  },
-    // BA: { van: 54, microbus: 42 },
-    // CE: { van: 22, microbus: 23 },
-    // DF: { van: 2,  microbus: 0  },
-    // ES: { van: 7,  microbus: 5  },
-    // GO: { van: 34, microbus: 18 },
-    // MA: { van: 32, microbus: 28 },
-    // MG: { van: 93, microbus: 30 },
-    // MS: { van: 12, microbus: 5  },
-    // MT: { van: 24, microbus: 12 },
-    // PA: { van: 20, microbus: 27 },
-    // PB: { van: 35, microbus: 12 },
-    // PE: { van: 19, microbus: 33 },
-    // PI: { van: 36, microbus: 19 },
-    // PR: { van: 30, microbus: 15 },
-    // RJ: { van: 5,  microbus: 3  },
-    // RN: { van: 20, microbus: 10 },
-    // RO: { van: 6,  microbus: 8  },
-    // RR: { van: 3,  microbus: 1  },
-    // RS: { van: 46, microbus: 24 },
-    // SC: { van: 22, microbus: 10 },
-    // SE: { van: 8,  microbus: 4  },
-    // SP: { van: 21, microbus: 11 },
-    // TO: { van: 26, microbus: 13 },
+    AC: { van: 3,  microbus: 2  },
+    AL: { van: 12, microbus: 6  },
+    AM: { van: 4,  microbus: 2  },
+    AP: { van: 3,  microbus: 1  },
+    BA: { van: 54, microbus: 42 },
+    CE: { van: 22, microbus: 23 },
+    DF: { van: 2,  microbus: 0  },
+    ES: { van: 7,  microbus: 5  },
+    GO: { van: 34, microbus: 18 },
+    MA: { van: 32, microbus: 28 },
+    MG: { van: 93, microbus: 30 },
+    MS: { van: 12, microbus: 5  },
+    MT: { van: 24, microbus: 12 },
+    PA: { van: 20, microbus: 27 },
+    PB: { van: 35, microbus: 12 },
+    PE: { van: 19, microbus: 33 },
+    PI: { van: 36, microbus: 19 },
+    PR: { van: 30, microbus: 15 },
+    RJ: { van: 5,  microbus: 3  },
+    RN: { van: 20, microbus: 10 },
+    RO: { van: 6,  microbus: 8  },
+    RR: { van: 3,  microbus: 1  },
+    RS: { van: 46, microbus: 24 },
+    SC: { van: 22, microbus: 10 },
+    SE: { van: 8,  microbus: 4  },
+    SP: { van: 21, microbus: 11 },
+    TO: { van: 26, microbus: 13 },
 };
 
 const GQ_DATA: Record<string, { van: number; ambulance: number; microbus: number }> = {
-    // AC: { van: 1,  ambulance: 15, microbus: 11  },
-    // AL: { van: 3,  ambulance: 11, microbus: 33  },
-    // AM: { van: 7,  ambulance: 14, microbus: 12  },
-    // AP: { van: 5,  ambulance: 16, microbus: 7   },
-    // BA: { van: 19, ambulance: 51, microbus: 104 },
-    // CE: { van: 12, ambulance: 38, microbus: 64  },
-    // DF: { van: 0,  ambulance: 6,  microbus: 2   },
-    // ES: { van: 1,  ambulance: 8,  microbus: 24  },
-    // GO: { van: 8,  ambulance: 30, microbus: 38  },
-    // MA: { van: 5,  ambulance: 38, microbus: 64  },
-    // MG: { van: 18, ambulance: 39, microbus: 86  },
-    // MS: { van: 1,  ambulance: 9,  microbus: 28  },
-    // MT: { van: 5,  ambulance: 23, microbus: 38  },
-    // PA: { van: 7,  ambulance: 31, microbus: 36  },
-    // PB: { van: 45, ambulance: 18, microbus: 43  },
-    // PE: { van: 11, ambulance: 27, microbus: 39  },
-    // PI: { van: 3,  ambulance: 34, microbus: 42  },
-    // PR: { van: 5,  ambulance: 26, microbus: 50  },
-    // RJ: { van: 2,  ambulance: 17, microbus: 40  },
-    // RN: { van: 2,  ambulance: 15, microbus: 19  },
-    // RO: { van: 1,  ambulance: 12, microbus: 30  },
-    // RR: { van: 0,  ambulance: 14, microbus: 13  },
-    // RS: { van: 14, ambulance: 17, microbus: 41  },
-    // SC: { van: 7,  ambulance: 9,  microbus: 30  },
-    // SE: { van: 5,  ambulance: 23, microbus: 23  },
-    // SP: { van: 11, ambulance: 51, microbus: 69  },
-    // TO: { van: 6,  ambulance: 18, microbus: 24  },
+    AC: { van: 1,  ambulance: 15, microbus: 11  },
+    AL: { van: 3,  ambulance: 11, microbus: 33  },
+    AM: { van: 7,  ambulance: 14, microbus: 12  },
+    AP: { van: 5,  ambulance: 16, microbus: 7   },
+    BA: { van: 19, ambulance: 51, microbus: 104 },
+    CE: { van: 13, ambulance: 38, microbus: 67  },
+    DF: { van: 0,  ambulance: 6,  microbus: 2   },
+    ES: { van: 1,  ambulance: 8,  microbus: 24  },
+    GO: { van: 8,  ambulance: 30, microbus: 38  },
+    MA: { van: 5,  ambulance: 38, microbus: 64  },
+    MG: { van: 18, ambulance: 39, microbus: 86  },
+    MS: { van: 1,  ambulance: 9,  microbus: 28  },
+    MT: { van: 5,  ambulance: 23, microbus: 38  },
+    PA: { van: 7,  ambulance: 31, microbus: 36  },
+    PB: { van: 45, ambulance: 18, microbus: 43  },
+    PE: { van: 11, ambulance: 27, microbus: 39  },
+    PI: { van: 3,  ambulance: 34, microbus: 42  },
+    PR: { van: 5,  ambulance: 26, microbus: 50  },
+    RJ: { van: 2,  ambulance: 16, microbus: 40  },
+    RN: { van: 2,  ambulance: 15, microbus: 19  },
+    RO: { van: 1,  ambulance: 12, microbus: 30  },
+    RR: { van: 0,  ambulance: 14, microbus: 13  },
+    RS: { van: 14, ambulance: 17, microbus: 41  },
+    SC: { van: 7,  ambulance: 9,  microbus: 30  },
+    SE: { van: 5,  ambulance: 23, microbus: 23  },
+    SP: { van: 11, ambulance: 51, microbus: 69  },
+    TO: { van: 6,  ambulance: 18, microbus: 24  },
+    ZZ: { van: 10, ambulance: 3,  microbus: 3   }, // "A Definir" — veículos sem UF definida
 };
 
 const DELIVERED_RTX_DATA: Record<string, { van: number; ambulance: number; minibus: number }> = {
@@ -197,49 +199,58 @@ async function seed() {
         console.log("  - Usuario admin ja existe, pulando.");
     }
 
+    // ── UF: insert se não existe, update só o state (preserva agreement/cib/region/hasFluxo) ──
     const ufRepo = dataSource.getRepository(Uf);
-    const existingUfs = await ufRepo.find();
-    let ufRecords: Uf[];
-    if (existingUfs.length === 0) {
-        ufRecords = await ufRepo.save(UF_STATES.map((u) => ufRepo.create({ uf: u.uf, state: u.state, agreement: u.agreement || null, cib: u.cib || null })));
-        console.log("  + " + ufRecords.length + " UFs criadas em uf");
-    } else {
-        ufRecords = existingUfs;
-        console.log("  - uf ja possui dados, pulando.");
+    for (const u of UF_STATES) {
+        const existing = await ufRepo.findOne({ where: { uf: u.uf } });
+        if (!existing) {
+            await ufRepo.save(ufRepo.create({ uf: u.uf, state: u.state, agreement: u.agreement, cib: u.cib }));
+        } else {
+            // Restaura state, agreement e cib. region e hasFluxo são preservados.
+            await ufRepo.update(existing.id, { state: u.state, agreement: u.agreement, cib: u.cib });
+        }
     }
+    const ufRecords = await ufRepo.find();
+    console.log("  ✓ uf: " + ufRecords.length + " UFs sincronizadas");
 
+    // ── transport_rtx: find-or-create + update por ufId ─────────────────────
     const transportRtxRepo = dataSource.getRepository(TransportRtx);
-    if ((await transportRtxRepo.count()) === 0) {
-        await transportRtxRepo.save(ufRecords.map((u) => {
-            const d = RTX_DATA[u.uf] ?? { van: 0, ambulance: 0, minibus: 0 };
-            return transportRtxRepo.create({ ufId: u.id, van: d.van, ambulance: d.ambulance, minibus: d.minibus });
-        }));
-        console.log("  + " + ufRecords.length + " registros criados em transport_rtx");
-    } else {
-        console.log("  - transport_rtx ja possui dados, pulando.");
+    for (const u of ufRecords) {
+        const d = RTX_DATA[u.uf] ?? { van: 0, ambulance: 0, minibus: 0 };
+        const existing = await transportRtxRepo.findOne({ where: { ufId: u.id } });
+        if (existing) {
+            await transportRtxRepo.update(existing.id, { van: d.van, ambulance: d.ambulance, minibus: d.minibus });
+        } else {
+            await transportRtxRepo.save(transportRtxRepo.create({ ufId: u.id, van: d.van, ambulance: d.ambulance, minibus: d.minibus }));
+        }
     }
+    console.log("  ✓ transport_rtx: " + ufRecords.length + " registros sincronizados");
 
+    // ── transport_trs: find-or-create + update por ufId ─────────────────────
     const transportTrsRepo = dataSource.getRepository(TransportTrs);
-    if ((await transportTrsRepo.count()) === 0) {
-        await transportTrsRepo.save(ufRecords.map((u) => {
-            const d = TRS_DATA[u.uf] ?? { van: 0, microbus: 0 };
-            return transportTrsRepo.create({ ufId: u.id, van: d.van, microbus: d.microbus });
-        }));
-        console.log("  + " + ufRecords.length + " registros criados em transport_trs");
-    } else {
-        console.log("  - transport_trs ja possui dados, pulando.");
+    for (const u of ufRecords) {
+        const d = TRS_DATA[u.uf] ?? { van: 0, microbus: 0 };
+        const existing = await transportTrsRepo.findOne({ where: { ufId: u.id } });
+        if (existing) {
+            await transportTrsRepo.update(existing.id, { van: d.van, microbus: d.microbus });
+        } else {
+            await transportTrsRepo.save(transportTrsRepo.create({ ufId: u.id, van: d.van, microbus: d.microbus }));
+        }
     }
+    console.log("  ✓ transport_trs: " + ufRecords.length + " registros sincronizados");
 
+    // ── general_quota: find-or-create + update por ufId ─────────────────────
     const generalQuotaRepo = dataSource.getRepository(GeneralQuota);
-    if ((await generalQuotaRepo.count()) === 0) {
-        await generalQuotaRepo.save(ufRecords.map((u) => {
-            const d = GQ_DATA[u.uf] ?? { van: 0, ambulance: 0, microbus: 0 };
-            return generalQuotaRepo.create({ ufId: u.id, van: d.van, ambulance: d.ambulance, microbus: d.microbus });
-        }));
-        console.log("  + " + ufRecords.length + " registros criados em general_quota");
-    } else {
-        console.log("  - general_quota ja possui dados, pulando.");
+    for (const u of ufRecords) {
+        const d = GQ_DATA[u.uf] ?? { van: 0, ambulance: 0, microbus: 0 };
+        const existing = await generalQuotaRepo.findOne({ where: { ufId: u.id } });
+        if (existing) {
+            await generalQuotaRepo.update(existing.id, { van: d.van, ambulance: d.ambulance, microbus: d.microbus });
+        } else {
+            await generalQuotaRepo.save(generalQuotaRepo.create({ ufId: u.id, van: d.van, ambulance: d.ambulance, microbus: d.microbus }));
+        }
     }
+    console.log("  ✓ general_quota: " + ufRecords.length + " registros sincronizados");
 
 
     const transportValueRepo = dataSource.getRepository(TransportValue);
@@ -269,8 +280,8 @@ async function seed() {
         // { name: "Raquel", surname: "Machado", role: "visualizador_transporte" },
         // { name: "Crystina", surname: "Yamamoto", role: "visualizador_transporte" },
         // { name: "Diana", surname: "Pereira", role: "gestor_all_combo" },
-        { name: "Marta",  surname: "Peres",    role: "gestor_geral" },
-        { name: "Erico",  surname: "Cordeiro", role: "gestor_geral" },
+        // { name: "Marta",  surname: "Peres",    role: "gestor_geral" },
+        // { name: "Erico",  surname: "Cordeiro", role: "gestor_geral" },
     ];
 
     if (USERS_TO_SEED.length > 0) {

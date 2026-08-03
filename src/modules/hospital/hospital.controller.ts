@@ -90,7 +90,7 @@ export class HospitalController {
     }
 
     @Get("combo/by-uf/:uf")
-    @RequiresModule("combo")
+    @RequiresModule("combo", "empresa")
     findComboByUf(@Param("uf") uf: string, @Req() req: AuthRequest) {
         return this.comboService.findComboByUf(uf.toUpperCase(), req.user?.companyId);
     }

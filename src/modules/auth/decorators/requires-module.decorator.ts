@@ -4,11 +4,13 @@ import type { ModuleName } from "../../role/entities/role-module.entity";
 export const MODULE_KEY = "required_module";
 
 /**
- * Decorator que marca qual módulo do sistema é necessário para acessar o endpoint.
+ * Decorator que marca quais módulos são necessários para acessar o endpoint.
+ * Aceita um ou mais módulos — o usuário precisa ter PELO MENOS UM deles (lógica OR).
  * Usado em conjunto com ModuleGuard.
  *
  * @example
  * \@RequiresModule('tomo')
+ * \@RequiresModule('combo', 'empresa')   // OR: combo ou empresa
  * \@UseGuards(JwtAuthGuard, ModuleGuard)
  */
-export const RequiresModule = (module: ModuleName) => SetMetadata(MODULE_KEY, module);
+export const RequiresModule = (...modules: ModuleName[]) => SetMetadata(MODULE_KEY, modules);

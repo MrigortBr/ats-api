@@ -19,21 +19,29 @@ export class EmailService {
         });
     }
 
+    /**
+     * Envia o e-mail de boas-vindas/credenciais.
+     * `companyName` é opcional — usuários sem empresa (internos ao DECAN/MS) não têm uma.
+     */
     async sendWelcome(opts: {
         to:          string;
         firstName:   string;
-        companyName: string;
+        companyName?: string;
         password:    string;
     }): Promise<void> {
         const from = process.env.MAIL_FROM_NAME
             ? `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_USER ?? process.env.SMTP_USER}>`
             : (process.env.SMTP_FROM ?? process.env.MAIL_USER ?? process.env.SMTP_USER);
 
+        const subject = opts.companyName
+            ? `Bem-vindo ao Painel de acompanhamento - ${opts.companyName}`
+            : `Bem-vindo ao Painel de acompanhamento`;
+
         try {
             await this.transporter.sendMail({
                 from,
                 to:      opts.to,
-                subject: `Bem-vindo ao Painel de acompanhamento - ${opts.companyName}`,
+                subject,
                 html:    credentialsEmailTemplate(opts.firstName, opts.to, opts.password, opts.companyName),
                 text:    credentialsTextTemplate(opts.firstName, opts.to, opts.password, opts.companyName),
             });

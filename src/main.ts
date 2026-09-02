@@ -15,10 +15,12 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     // Headers de seguranca HTTP (X-Frame-Options, HSTS, X-Content-Type-Options, etc.)
-    app.use(helmet({
-        // CSP desativado aqui -- frontend Next.js controla o proprio CSP
-        contentSecurityPolicy: false,
-    }));
+    app.use(
+        helmet({
+            // CSP desativado aqui -- frontend Next.js controla o proprio CSP
+            contentSecurityPolicy: false,
+        }),
+    );
 
     // Compressao gzip -- reduz payload em ~70% (critico pra mobile)
     app.use(compression({ level: 6, threshold: 1024 }));
@@ -28,7 +30,9 @@ async function bootstrap() {
 
     const corsOrigin = process.env.CORS_ORIGIN;
     if (!corsOrigin && process.env.NODE_ENV === "production") {
-        throw new Error("CORS_ORIGIN nao definida em producao -- configure o arquivo .env");
+        throw new Error(
+            "CORS_ORIGIN nao definida em producao -- configure o arquivo .env",
+        );
     }
     app.enableCors({
         origin: corsOrigin ?? "http://localhost:3000",
@@ -39,17 +43,22 @@ async function bootstrap() {
     });
 
     app.useGlobalFilters(new HttpExceptionFilter());
-    app.useGlobalInterceptors(new HttpCacheInterceptor(), new ResponseInterceptor());
-    app.useGlobalPipes(new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-    }));
+    app.useGlobalInterceptors(
+        new HttpCacheInterceptor(),
+        new ResponseInterceptor(),
+    );
+    app.useGlobalPipes(
+        new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+            transform: true,
+        }),
+    );
 
     // Keep-Alive -- reutiliza conexoes TCP
     const server = app.getHttpServer();
     server.keepAliveTimeout = 65_000;
-    server.headersTimeout   = 66_000;
+    server.headersTimeout = 66_000;
 
     const port = Number(process.env.PORT) || 2001;
     await app.listen(port);

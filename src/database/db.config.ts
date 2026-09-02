@@ -21,6 +21,7 @@ import { CotaGeralMunicipio } from "../modules/cota-geral-municipio/entities/cot
 import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.entity";
 import { Document } from "../modules/document/entities/document.entity";
 import { TomoDocument } from "../modules/tomo-document/entities/tomo-document.entity";
+import { AceleradorObservacao } from "../modules/acelerador-observacao/entities/acelerador-observacao.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -37,6 +38,7 @@ export const DB_ENTITIES: EntityClass[] = [
     Document,
     TomoDocument,
     UfFluxoComentario,
+    AceleradorObservacao,
 ];
 
 export const DB_BASE_OPTIONS = {

@@ -29,6 +29,8 @@ import { RoleModule } from "./modules/role/role.module";
 import { EmpresaModule } from "./modules/empresa/empresa.module";
 import { DocumentModule } from "./modules/document/document.module";
 import { TomoDocumentModule } from "./modules/tomo-document/tomo-document.module";
+import { AceleradorObservacaoModule } from "./modules/acelerador-observacao/acelerador-observacao.module";
+import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.module";
 
 @Module({
     controllers: [AppController],
@@ -72,6 +74,10 @@ import { TomoDocumentModule } from "./modules/tomo-document/tomo-document.module
         // Documents (upload/download por módulo)
         DocumentModule,
         TomoDocumentModule,
+        // Aceleradores Lineares — observações com auditoria
+        AceleradorObservacaoModule,
+        // Usuários sem empresa (internos ao DECAN/MS) — restrito a admin
+        UsuarioInternoModule,
     ],
 })
 export class AppModule {}

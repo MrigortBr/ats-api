@@ -23,6 +23,7 @@ import { HospitalModule } from "./modules/hospital/hospital.module";
 import { CibModule } from "./modules/cib/cib.module";
 import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
 import { CotaGeralMunicipioModule } from "./modules/cota-geral-municipio/cota-geral-municipio.module";
+import { CibMunicipioModule } from "./modules/cib-municipio/cib-municipio.module";
 import { CompanyModule } from "./modules/company/company.module";
 import { RoleModule } from "./modules/role/role.module";
 import { EmpresaModule } from "./modules/empresa/empresa.module";
@@ -61,6 +62,8 @@ import { TomoDocumentModule } from "./modules/tomo-document/tomo-document.module
         RnmDocumentModule,
         // Cota Geral - Municipios
         CotaGeralMunicipioModule,
+        // CIB - Municipios (RTx/TRS pactuados nas deliberacoes de CIB)
+        CibMunicipioModule,
         // RBAC / Multi-tenant
         CompanyModule,
         RoleModule,

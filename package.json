@@ -14,6 +14,8 @@
         "migration:generate": "npx typeorm-ts-node-commonjs migration:generate src/database/migrations/NAME_MIGRATION -d src/database/data-source.cli.ts",
         "migration:run": "npx typeorm-ts-node-commonjs migration:run -d src/database/data-source.cli.ts",
         "seed:run": "npx ts-node -r tsconfig-paths/register src/database/seed/index.ts",
+        "seed:cota-geral-municipio": "npx ts-node -r tsconfig-paths/register src/database/seed/cota-geral-municipio.seed.ts",
+        "seed:cib-municipio": "npx ts-node -r tsconfig-paths/register src/database/seed/cib-municipio.seed.ts",
         "test": "jest --config jest.config.js",
         "test:cov": "jest --config jest.config.js --coverage"
     },

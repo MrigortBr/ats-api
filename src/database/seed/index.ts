@@ -301,6 +301,8 @@ async function seed() {
         // { name: "Diana", surname: "Pereira", role: "gestor_all_combo" },
         // { name: "Marta",  surname: "Peres",    role: "gestor_geral" },
         // { name: "Erico",  surname: "Cordeiro", role: "gestor_geral" },
+        { name: "Emanuelle", surname: "Mariano", role: "gestor_equipamentos" },
+        { name: "Debora",    surname: "Freitas", role: "gestor_equipamentos" },
     ];
 
     if (USERS_TO_SEED.length > 0) {

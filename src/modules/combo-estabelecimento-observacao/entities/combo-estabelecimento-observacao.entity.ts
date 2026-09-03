@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import type { ComboEstabelecimentoObservacaoImagem } from "./combo-estabelecimento-observacao-imagem.entity";
 
 @Entity("combo_estabelecimento_observacoes")
 export class ComboEstabelecimentoObservacao {
@@ -19,4 +20,8 @@ export class ComboEstabelecimentoObservacao {
 
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    @OneToMany(() => require("./combo-estabelecimento-observacao-imagem.entity").ComboEstabelecimentoObservacaoImagem, (img: ComboEstabelecimentoObservacaoImagem) => img.observacao)
+    imagens!: ComboEstabelecimentoObservacaoImagem[];
 }

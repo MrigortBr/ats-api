@@ -17,6 +17,8 @@ export class UpdateHospitalTomoDto {
     @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsBoolean() ebserhPriority?: boolean | null;
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryDate?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() monthlyProductionBefore?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() monthlyProductionAfter?: number | null;
     @ApiPropertyOptional({ enum: ["E", "M", "D"] }) @IsOptional() @IsString() gestao?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() naturezaJuridica?: string | null;
 }
@@ -36,6 +38,8 @@ export class UpdateHospitalRnmDto {
     @ApiPropertyOptional() @IsOptional() @IsBoolean() ebserhPriority?: boolean | null;
     @ApiPropertyOptional() @IsOptional() @IsString() deliveryDate?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() monthlyProductionBefore?: number | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() monthlyProductionAfter?: number | null;
     @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string | null;
     @ApiPropertyOptional({ enum: ["E", "M", "D"] }) @IsOptional() @IsString() gestao?: string | null;
     @ApiPropertyOptional() @IsOptional() @IsString() naturezaJuridica?: string | null;

@@ -68,6 +68,12 @@ export class HospitalRnm {
     @Column({ type: "text", nullable: true })
     notes!: string | null;
 
+    @Column({ name: "monthly_production_before", type: "integer", nullable: true })
+    monthlyProductionBefore!: number | null;
+
+    @Column({ name: "monthly_production_after", type: "integer", nullable: true })
+    monthlyProductionAfter!: number | null;
+
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
 

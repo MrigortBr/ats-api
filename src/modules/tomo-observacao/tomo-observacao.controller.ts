@@ -8,16 +8,16 @@ import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 import type { AuthRequest } from "../../common/types/auth-request.type";
 import type { MulterFile } from "../../common/types/multer-file.type";
-import { ComboEquipamentoObservacaoService } from "./combo-equipamento-observacao.service";
-import { CreateComboEquipamentoObservacaoDto } from "./dto/create-combo-equipamento-observacao.dto";
+import { TomoObservacaoService } from "./tomo-observacao.service";
+import { CreateTomoObservacaoDto } from "./dto/create-tomo-observacao.dto";
 
 const IMAGE_MIMETYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
 @UseGuards(JwtAuthGuard, ModuleGuard)
-@RequiresModule("combo")
-@Controller("/combo-equipamento-observacoes")
-export class ComboEquipamentoObservacaoController {
-    constructor(private readonly service: ComboEquipamentoObservacaoService) {}
+@RequiresModule("tomo")
+@Controller("/tomo-observacoes")
+export class TomoObservacaoController {
+    constructor(private readonly service: TomoObservacaoService) {}
 
     /** Todas as observações — para enriquecer a listagem do frontend de uma vez */
     @Get()
@@ -25,21 +25,21 @@ export class ComboEquipamentoObservacaoController {
         return this.service.findAll();
     }
 
-    /** Observações de um equipamento específico (equipKey) */
-    @Get("by-equip-key/:equipKey")
-    findByEquipKey(@Param("equipKey") equipKey: string) {
-        return this.service.findByEquipKey(equipKey);
+    /** Observações de um hospital específico (hospitalId) */
+    @Get("by-hospital/:hospitalId")
+    findByHospitalId(@Param("hospitalId") hospitalId: string) {
+        return this.service.findByHospitalId(Number(hospitalId));
     }
 
     /** Criar observação — o autor vem do usuário autenticado (auditoria) */
-    @Post(":equipKey")
+    @Post(":hospitalId")
     create(
-        @Param("equipKey") equipKey: string,
-        @Body() dto: CreateComboEquipamentoObservacaoDto,
+        @Param("hospitalId") hospitalId: string,
+        @Body() dto: CreateTomoObservacaoDto,
         @Req() req: AuthRequest,
     ) {
         const autor = req.user?.name ?? req.user?.email ?? "Usuário";
-        return this.service.create(equipKey, dto.texto, String(autor));
+        return this.service.create(Number(hospitalId), dto.texto, String(autor));
     }
 
     /** Excluir observação — restrito a administradores (auditoria não pode ser apagada por qualquer um) */

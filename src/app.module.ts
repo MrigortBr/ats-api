@@ -32,6 +32,8 @@ import { TomoDocumentModule } from "./modules/tomo-document/tomo-document.module
 import { AceleradorObservacaoModule } from "./modules/acelerador-observacao/acelerador-observacao.module";
 import { ComboEquipamentoObservacaoModule } from "./modules/combo-equipamento-observacao/combo-equipamento-observacao.module";
 import { ComboEstabelecimentoObservacaoModule } from "./modules/combo-estabelecimento-observacao/combo-estabelecimento-observacao.module";
+import { TomoObservacaoModule } from "./modules/tomo-observacao/tomo-observacao.module";
+import { RnmObservacaoModule } from "./modules/rnm-observacao/rnm-observacao.module";
 import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.module";
 
 @Module({
@@ -82,6 +84,9 @@ import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.
         ComboEquipamentoObservacaoModule,
         // Combo Estabelecimento — observações com auditoria
         ComboEstabelecimentoObservacaoModule,
+        // TOMO / RNM — observações com auditoria e anexo de imagens
+        TomoObservacaoModule,
+        RnmObservacaoModule,
         // Usuários sem empresa (internos ao DECAN/MS) — restrito a admin
         UsuarioInternoModule,
     ],

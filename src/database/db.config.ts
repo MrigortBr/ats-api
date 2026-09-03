@@ -23,7 +23,13 @@ import { Document } from "../modules/document/entities/document.entity";
 import { TomoDocument } from "../modules/tomo-document/entities/tomo-document.entity";
 import { AceleradorObservacao } from "../modules/acelerador-observacao/entities/acelerador-observacao.entity";
 import { ComboEquipamentoObservacao } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao.entity";
+import { ComboEquipamentoObservacaoImagem } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao-imagem.entity";
 import { ComboEstabelecimentoObservacao } from "../modules/combo-estabelecimento-observacao/entities/combo-estabelecimento-observacao.entity";
+import { ComboEstabelecimentoObservacaoImagem } from "../modules/combo-estabelecimento-observacao/entities/combo-estabelecimento-observacao-imagem.entity";
+import { TomoObservacao } from "../modules/tomo-observacao/entities/tomo-observacao.entity";
+import { TomoObservacaoImagem } from "../modules/tomo-observacao/entities/tomo-observacao-imagem.entity";
+import { RnmObservacao } from "../modules/rnm-observacao/entities/rnm-observacao.entity";
+import { RnmObservacaoImagem } from "../modules/rnm-observacao/entities/rnm-observacao-imagem.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -41,8 +47,10 @@ export const DB_ENTITIES: EntityClass[] = [
     TomoDocument,
     UfFluxoComentario,
     AceleradorObservacao,
-    ComboEquipamentoObservacao,
-    ComboEstabelecimentoObservacao,
+    ComboEquipamentoObservacao, ComboEquipamentoObservacaoImagem,
+    ComboEstabelecimentoObservacao, ComboEstabelecimentoObservacaoImagem,
+    TomoObservacao, TomoObservacaoImagem,
+    RnmObservacao, RnmObservacaoImagem,
 ];
 
 export const DB_BASE_OPTIONS = {

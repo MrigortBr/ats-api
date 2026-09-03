@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { ComboEstabelecimentoObservacao } from "./entities/combo-estabelecimento-observacao.entity";
-import { ComboEstabelecimentoObservacaoImagem } from "./entities/combo-estabelecimento-observacao-imagem.entity";
+import { RnmObservacao } from "./entities/rnm-observacao.entity";
+import { RnmObservacaoImagem } from "./entities/rnm-observacao-imagem.entity";
 import type { MulterFile } from "../../common/types/multer-file.type";
 
 const IMAGEM_SELECT = {
@@ -10,16 +10,16 @@ const IMAGEM_SELECT = {
 } as const;
 
 @Injectable()
-export class ComboEstabelecimentoObservacaoService {
+export class RnmObservacaoService {
     constructor(
-        @InjectRepository(ComboEstabelecimentoObservacao)
-        private readonly repo: Repository<ComboEstabelecimentoObservacao>,
-        @InjectRepository(ComboEstabelecimentoObservacaoImagem)
-        private readonly imagemRepo: Repository<ComboEstabelecimentoObservacaoImagem>,
+        @InjectRepository(RnmObservacao)
+        private readonly repo: Repository<RnmObservacao>,
+        @InjectRepository(RnmObservacaoImagem)
+        private readonly imagemRepo: Repository<RnmObservacaoImagem>,
     ) {}
 
     /** Todas as observações — para enriquecer a listagem do frontend de uma vez (evita N+1 fetch por linha). */
-    findAll(): Promise<ComboEstabelecimentoObservacao[]> {
+    findAll(): Promise<RnmObservacao[]> {
         return this.repo.find({
             order: { createdAt: "DESC" },
             relations: { imagens: true },
@@ -27,18 +27,18 @@ export class ComboEstabelecimentoObservacaoService {
         });
     }
 
-    /** Observações de um estabelecimento específico (por estabKey). */
-    findByEstabKey(estabKey: string): Promise<ComboEstabelecimentoObservacao[]> {
+    /** Observações de um hospital específico (por hospitalId). */
+    findByHospitalId(hospitalId: number): Promise<RnmObservacao[]> {
         return this.repo.find({
-            where: { estabKey },
+            where: { hospitalId },
             order: { createdAt: "DESC" },
             relations: { imagens: true },
             select: { imagens: IMAGEM_SELECT },
         });
     }
 
-    async create(estabKey: string, texto: string, autor: string): Promise<ComboEstabelecimentoObservacao> {
-        const observacao = this.repo.create({ estabKey, texto: texto.trim(), autor });
+    async create(hospitalId: number, texto: string, autor: string): Promise<RnmObservacao> {
+        const observacao = this.repo.create({ hospitalId, texto: texto.trim(), autor });
         const saved = await this.repo.save(observacao);
         return { ...saved, imagens: [] };
     }

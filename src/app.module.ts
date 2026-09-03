@@ -30,6 +30,7 @@ import { EmpresaModule } from "./modules/empresa/empresa.module";
 import { DocumentModule } from "./modules/document/document.module";
 import { TomoDocumentModule } from "./modules/tomo-document/tomo-document.module";
 import { AceleradorObservacaoModule } from "./modules/acelerador-observacao/acelerador-observacao.module";
+import { ComboEquipamentoObservacaoModule } from "./modules/combo-equipamento-observacao/combo-equipamento-observacao.module";
 import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.module";
 
 @Module({
@@ -76,6 +77,8 @@ import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.
         TomoDocumentModule,
         // Aceleradores Lineares — observações com auditoria
         AceleradorObservacaoModule,
+        // Combo Equipamento — observações com auditoria
+        ComboEquipamentoObservacaoModule,
         // Usuários sem empresa (internos ao DECAN/MS) — restrito a admin
         UsuarioInternoModule,
     ],

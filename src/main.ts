@@ -8,11 +8,17 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import { json, urlencoded } from "express";
 
 dotenv.config();
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
+    // bodyParser: false -- desativa o body-parser automatico do Nest (limite padrao de 100kb)
+    // pra registrar o nosso proprio, com limite maior (importacoes em massa como a de
+    // status de combo-equipamento via planilha mandam centenas/milhares de linhas em JSON).
+    const app = await NestFactory.create(AppModule, { bodyParser: false });
+    app.use(json({ limit: "15mb" }));
+    app.use(urlencoded({ extended: true, limit: "15mb" }));
 
     // Headers de seguranca HTTP (X-Frame-Options, HSTS, X-Content-Type-Options, etc.)
     app.use(

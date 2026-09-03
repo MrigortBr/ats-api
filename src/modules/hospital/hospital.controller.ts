@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Req, UseGuards } from "@nestjs/common";
 import { HospitalService } from "./hospital.service";
 import { HospitalComboService } from "./hospital-combo.service";
-import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, CreateComboConsultDto, UpdateComboConsultDto } from "./dto/hospital.dto";
+import { CreateHospitalDto, BulkCreateHospitalDto, UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto, CreateComboConsultDto, UpdateComboConsultDto, ImportStatusRowsDto } from "./dto/hospital.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
@@ -146,6 +146,20 @@ export class HospitalController {
     @RequiresModule("combo")
     @HttpCode(204)
     softDeleteEquipamento(@Param("id") id: string) { return this.comboService.softDeleteEquipamento(Number(id)); }
+
+    // ── Importação em massa de status via planilha (admin) ───────────────────
+
+    @Post("combo-equipamento/import-status/preview")
+    @RequiresModule("admin")
+    previewStatusImport(@Body() dto: ImportStatusRowsDto) {
+        return this.comboService.previewStatusImport(dto.rows, dto.allowPositionalPairing ?? false);
+    }
+
+    @Post("combo-equipamento/import-status/apply")
+    @RequiresModule("admin")
+    applyStatusImport(@Body() dto: ImportStatusRowsDto) {
+        return this.comboService.applyStatusImport(dto.rows, dto.allowPositionalPairing ?? false);
+    }
 
     // ── Hard delete hospital (admin) ──────────────────────────────────────────
 

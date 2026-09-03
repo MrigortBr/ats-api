@@ -22,6 +22,7 @@ import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.enti
 import { Document } from "../modules/document/entities/document.entity";
 import { TomoDocument } from "../modules/tomo-document/entities/tomo-document.entity";
 import { AceleradorObservacao } from "../modules/acelerador-observacao/entities/acelerador-observacao.entity";
+import { ComboEquipamentoObservacao } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -39,6 +40,7 @@ export const DB_ENTITIES: EntityClass[] = [
     TomoDocument,
     UfFluxoComentario,
     AceleradorObservacao,
+    ComboEquipamentoObservacao,
 ];
 
 export const DB_BASE_OPTIONS = {

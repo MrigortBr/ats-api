@@ -185,3 +185,31 @@ export class BulkCreateHospitalDto {
     @IsString({ each: true })
     cnesList!: string[];
 }
+
+// ── Importação em massa de status (planilha externa) ───────────────────────────
+
+export class ImportStatusRowDto {
+    @ApiProperty() @IsString() @IsNotEmpty() cnes!: string;
+    @ApiProperty() @IsString() @IsNotEmpty() equipmentName!: string;
+    @ApiPropertyOptional() @IsOptional() @IsString() serialNumber?: string | null;
+    // Cada um destes é opcional: uma linha pode trazer só um subconjunto (ex: só pagamento).
+    @ApiPropertyOptional() @IsOptional() @IsString() deliveryStatus?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsString() paymentStatus?: string | null;
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() nfSent?: boolean | null;
+    @ApiPropertyOptional() @IsOptional() @IsNumber() sourceRow?: number | null;
+}
+
+export class ImportStatusRowsDto {
+    @ApiProperty({ type: [ImportStatusRowDto], maxItems: 5000 })
+    @IsArray()
+    @ArrayMaxSize(5000)
+    @ValidateNested({ each: true })
+    @Type(() => ImportStatusRowDto)
+    rows!: ImportStatusRowDto[];
+
+    // Quando true: se sobrarem N candidatos duplicados (mesmo CNES+Equipamento) sem série
+    // cadastrada de nenhum dos lados, e a planilha também tiver N linhas nesse mesmo grupo
+    // sobrando, casa um a um pela ordem (id do banco × linha da planilha) em vez de deixar
+    // como "não encontrado". Opt-in — o usuário decide isso explicitamente na tela.
+    @ApiPropertyOptional() @IsOptional() @IsBoolean() allowPositionalPairing?: boolean;
+}

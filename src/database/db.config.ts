@@ -23,6 +23,7 @@ import { Document } from "../modules/document/entities/document.entity";
 import { TomoDocument } from "../modules/tomo-document/entities/tomo-document.entity";
 import { AceleradorObservacao } from "../modules/acelerador-observacao/entities/acelerador-observacao.entity";
 import { ComboEquipamentoObservacao } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao.entity";
+import { ComboEstabelecimentoObservacao } from "../modules/combo-estabelecimento-observacao/entities/combo-estabelecimento-observacao.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -41,6 +42,7 @@ export const DB_ENTITIES: EntityClass[] = [
     UfFluxoComentario,
     AceleradorObservacao,
     ComboEquipamentoObservacao,
+    ComboEstabelecimentoObservacao,
 ];
 
 export const DB_BASE_OPTIONS = {

@@ -58,7 +58,6 @@ const UF_STATES: { uf: string; state: string; agreement: string | null; cib: str
     { uf: "SE", state: "Sergipe",              agreement: "MUNICIPIOS - NOMES E TIPO DE TS EM ANEXO",          cib: "Sim"          },
     { uf: "SP", state: "Sao Paulo",            agreement: "MUNICIPIOS",                                        cib: "Em andamento" },
     { uf: "TO", state: "Tocantins",            agreement: "DEFINICAO EM ANDAMENTO",                            cib: "Nao"          },
-    { uf: "ZZ", state: "A Definir",            agreement: null,                                                cib: null           },
 ];
 
 const RTX_DATA: Record<string, { van: number; ambulance: number; minibus: number }> = {
@@ -149,7 +148,6 @@ const GQ_DATA: Record<string, { van: number; ambulance: number; microbus: number
     SE: { van: 5,  ambulance: 23, microbus: 23  },
     SP: { van: 11, ambulance: 51, microbus: 69  },
     TO: { van: 6,  ambulance: 18, microbus: 24  },
-    ZZ: { van: 10, ambulance: 3,  microbus: 3   }, // "A Definir" — veículos sem UF definida
 };
 
 // Dados de entrega RTx+TRS extraídos do xlsx "RTx e TRS_ Lei 15.233 de 2025_Atualizado (5).xlsx"

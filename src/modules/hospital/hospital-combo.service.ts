@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { In, Repository } from "typeorm";
 import { ComboConsult } from "./entities/combo-consult.entity";
 import { Hospital } from "./entities/hospital.entity";
+import { HospitalTipoAtendimento } from "./entities/hospital-tipo-atendimento.entity";
 import { CreateComboConsultDto, UpdateComboConsultDto, ImportStatusRowDto } from "./dto/hospital.dto";
 import { CreateComboCompletoDto } from "../empresa/dto/empresa.dto";
 
@@ -44,7 +45,23 @@ export class HospitalComboService {
         private readonly consultRepo: Repository<ComboConsult>,
         @InjectRepository(Hospital)
         private readonly hospitalRepo: Repository<Hospital>,
+        @InjectRepository(HospitalTipoAtendimento)
+        private readonly tipoAtendimentoRepo: Repository<HospitalTipoAtendimento>,
     ) {}
+
+    /** Busca em lote os tipos de atendimento (por CNES) e devolve os itens com o campo `tiposAtendimento` anexado. */
+    private async attachTiposAtendimento<T extends { cnes: string | null; hospital?: { cnes: string | null } | null }>(
+        items: T[],
+    ): Promise<(T & { tiposAtendimento: string[] })[]> {
+        const cnesOf = (item: T) => item.cnes ?? item.hospital?.cnes ?? null;
+        const cnesList = [...new Set(items.map(cnesOf).filter((c): c is string => !!c))];
+        const map = new Map<string, string[]>();
+        if (cnesList.length > 0) {
+            const rows = await this.tipoAtendimentoRepo.find({ where: cnesList.map(cnes => ({ cnes })) });
+            for (const row of rows) map.set(row.cnes, row.tipos);
+        }
+        return items.map(item => ({ ...item, tiposAtendimento: map.get(cnesOf(item) ?? "") ?? [] }));
+    }
 
     // ── CREATE ────────────────────────────────────────────────────────────────
 
@@ -82,22 +99,24 @@ export class HospitalComboService {
 
     async findAllCombo(companyId?: number | null) {
         const where = companyId ? { companyId } : undefined;
-        return this.consultRepo.find({
+        const items = await this.consultRepo.find({
             where,
             relations: { hospital: { uf: true }, company: true },
             order: { uf: "ASC", establishmentName: "ASC", comboType: "ASC" },
         });
+        return this.attachTiposAtendimento(items);
     }
 
     async findComboByUf(ufSigla: string, companyId?: number | null) {
         const where = companyId
             ? { uf: ufSigla, companyId }
             : { uf: ufSigla };
-        return this.consultRepo.find({
+        const items = await this.consultRepo.find({
             where,
             relations: { hospital: { uf: true }, company: true },
             order: { establishmentName: "ASC", comboType: "ASC" },
         });
+        return this.attachTiposAtendimento(items);
     }
 
     async findAllEquipamentos(companyId?: number | null) {

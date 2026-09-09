@@ -4,6 +4,7 @@ import { Repository, DataSource } from "typeorm";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
+import { HospitalTipoAtendimento } from "./entities/hospital-tipo-atendimento.entity";
 import { Uf } from "../uf/entities/uf.entity";
 import { UpdateHospitalTomoDto, UpdateHospitalRnmDto, UpdateHospitalDto } from "./dto/hospital.dto";
 
@@ -50,10 +51,25 @@ export class HospitalService {
         private readonly tomoRepo: Repository<HospitalTomo>,
         @InjectRepository(HospitalRnm)
         private readonly rnmRepo: Repository<HospitalRnm>,
+        @InjectRepository(HospitalTipoAtendimento)
+        private readonly tipoAtendimentoRepo: Repository<HospitalTipoAtendimento>,
         @InjectRepository(Uf)
         private readonly ufRepo: Repository<Uf>,
         private readonly dataSource: DataSource,
     ) {}
+
+    /** Busca em lote os tipos de atendimento (por CNES) e devolve os itens com o campo `tiposAtendimento` anexado. */
+    private async attachTiposAtendimento<T extends { hospital?: { cnes: string | null } | null }>(
+        items: T[],
+    ): Promise<(T & { tiposAtendimento: string[] })[]> {
+        const cnesList = [...new Set(items.map(i => i.hospital?.cnes).filter((c): c is string => !!c))];
+        const map = new Map<string, string[]>();
+        if (cnesList.length > 0) {
+            const rows = await this.tipoAtendimentoRepo.find({ where: cnesList.map(cnes => ({ cnes })) });
+            for (const row of rows) map.set(row.cnes, row.tipos);
+        }
+        return items.map(item => ({ ...item, tiposAtendimento: map.get(item.hospital?.cnes ?? "") ?? [] }));
+    }
 
     // ── DEMAS API ──────────────────────────────────────────────────────────────
 
@@ -282,35 +298,39 @@ export class HospitalService {
     // ── LIST TOMO ─────────────────────────────────────────────────────────────
 
     async findAllTomo() {
-        return this.tomoRepo.find({
+        const items = await this.tomoRepo.find({
             relations: { hospital: { uf: true } },
             order: { hospital: { uf: { uf: "ASC" }, name: "ASC" } },
         });
+        return this.attachTiposAtendimento(items);
     }
 
     async findTomoByUf(ufSigla: string) {
-        return this.tomoRepo.find({
+        const items = await this.tomoRepo.find({
             where: { hospital: { uf: { uf: ufSigla } } },
             relations: { hospital: { uf: true } },
             order: { hospital: { name: "ASC" } },
         });
+        return this.attachTiposAtendimento(items);
     }
 
     // ── LIST RNM ──────────────────────────────────────────────────────────────
 
     async findAllRnm() {
-        return this.rnmRepo.find({
+        const items = await this.rnmRepo.find({
             relations: { hospital: { uf: true } },
             order: { hospital: { uf: { uf: "ASC" }, name: "ASC" } },
         });
+        return this.attachTiposAtendimento(items);
     }
 
     async findRnmByUf(ufSigla: string) {
-        return this.rnmRepo.find({
+        const items = await this.rnmRepo.find({
             where: { hospital: { uf: { uf: ufSigla } } },
             relations: { hospital: { uf: true } },
             order: { hospital: { name: "ASC" } },
         });
+        return this.attachTiposAtendimento(items);
     }
 
     // ── UPDATE HOSPITAL ───────────────────────────────────────────────────────

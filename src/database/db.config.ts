@@ -32,6 +32,7 @@ import { RnmObservacao } from "../modules/rnm-observacao/entities/rnm-observacao
 import { RnmObservacaoImagem } from "../modules/rnm-observacao/entities/rnm-observacao-imagem.entity";
 import { EquipamentoConvenioSisconv } from "../modules/equipamento-convenio/entities/equipamento-convenio-sisconv.entity";
 import { EquipamentoConvenioSispro } from "../modules/equipamento-convenio/entities/equipamento-convenio-sispro.entity";
+import { HospitalTipoAtendimento } from "../modules/hospital/entities/hospital-tipo-atendimento.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -54,6 +55,7 @@ export const DB_ENTITIES: EntityClass[] = [
     TomoObservacao, TomoObservacaoImagem,
     RnmObservacao, RnmObservacaoImagem,
     EquipamentoConvenioSisconv, EquipamentoConvenioSispro,
+    HospitalTipoAtendimento,
 ];
 
 export const DB_BASE_OPTIONS = {

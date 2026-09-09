@@ -34,6 +34,7 @@ import { ComboEquipamentoObservacaoModule } from "./modules/combo-equipamento-ob
 import { ComboEstabelecimentoObservacaoModule } from "./modules/combo-estabelecimento-observacao/combo-estabelecimento-observacao.module";
 import { TomoObservacaoModule } from "./modules/tomo-observacao/tomo-observacao.module";
 import { RnmObservacaoModule } from "./modules/rnm-observacao/rnm-observacao.module";
+import { EquipamentoConvenioModule } from "./modules/equipamento-convenio/equipamento-convenio.module";
 import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.module";
 
 @Module({
@@ -87,6 +88,8 @@ import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.
         // TOMO / RNM — observações com auditoria e anexo de imagens
         TomoObservacaoModule,
         RnmObservacaoModule,
+        // Convênios de Equipamentos (Cirurgia Robótica, Mamógrafo, PET/CT) — SISCONV/SISPRO, somente leitura
+        EquipamentoConvenioModule,
         // Usuários sem empresa (internos ao DECAN/MS) — restrito a admin
         UsuarioInternoModule,
     ],

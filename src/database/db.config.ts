@@ -30,6 +30,8 @@ import { TomoObservacao } from "../modules/tomo-observacao/entities/tomo-observa
 import { TomoObservacaoImagem } from "../modules/tomo-observacao/entities/tomo-observacao-imagem.entity";
 import { RnmObservacao } from "../modules/rnm-observacao/entities/rnm-observacao.entity";
 import { RnmObservacaoImagem } from "../modules/rnm-observacao/entities/rnm-observacao-imagem.entity";
+import { EquipamentoConvenioSisconv } from "../modules/equipamento-convenio/entities/equipamento-convenio-sisconv.entity";
+import { EquipamentoConvenioSispro } from "../modules/equipamento-convenio/entities/equipamento-convenio-sispro.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -51,6 +53,7 @@ export const DB_ENTITIES: EntityClass[] = [
     ComboEstabelecimentoObservacao, ComboEstabelecimentoObservacaoImagem,
     TomoObservacao, TomoObservacaoImagem,
     RnmObservacao, RnmObservacaoImagem,
+    EquipamentoConvenioSisconv, EquipamentoConvenioSispro,
 ];
 
 export const DB_BASE_OPTIONS = {

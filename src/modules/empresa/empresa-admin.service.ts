@@ -15,6 +15,7 @@ import {
     UpdateCompanyAdminDto,
     CreateCompanyUserDto,
 } from "./dto/empresa-admin.dto";
+import { generateSecurePassword } from "../../common/utils/generate-credentials";
 
 /** Usuário autenticado extraído do JWT pelo JwtAuthGuard. */
 export interface AdminUser {
@@ -46,16 +47,10 @@ function assertCompanyScope(user: AdminUser, targetCompanyId: number): void {
 }
 
 /** Gera senha inicial: PrimeiroNomeÚltimoNome + 3 chars empresa + 3 dígitos. */
-function generatePassword(
-    firstName: string,
-    lastName: string,
-    companyName: string,
-): string {
-    const companyPart = companyName.replace(/\s/g, "").slice(0, 3).toUpperCase();
-    const digits = Array.from({ length: 3 }, () =>
-        String(Math.floor(Math.random() * 9) + 1),
-    ).join("");
-    return `${firstName}${lastName}${companyPart}${digits}`;
+/** Senha inicial aleatória e segura (antes: Nome+Sobrenome+3 letras da empresa+3 dígitos). */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function generatePassword(_firstName: string, _lastName: string, _companyName: string): string {
+    return generateSecurePassword();
 }
 
 @Injectable()

@@ -293,7 +293,7 @@ describe("EmpresaAdminService", () => {
             ).rejects.toThrow(NotFoundException);
         });
 
-        it("retorna password no formato esperado (NomeSobrenomeXXX###)", async () => {
+        it("retorna password aleatória e forte (não derivada do nome)", async () => {
             (roleRepo.findOne    as jest.Mock).mockResolvedValue(makeRole("funcionario"));
             (companyRepo.findOne as jest.Mock).mockResolvedValue(makeCompany({ name: "Hospital Central" }));
             (userRepo.save       as jest.Mock).mockResolvedValue(makeUser());
@@ -305,7 +305,12 @@ describe("EmpresaAdminService", () => {
             } as any);
 
             // Deve começar com firstName + lastName + parte da empresa + 3 dígitos
-            expect(password).toMatch(/^JoãoSilvaHOS\d{3}$/);
+            expect(password.length).toBeGreaterThanOrEqual(12);
+            expect(password).toMatch(/[A-Z]/);
+            expect(password).toMatch(/[a-z]/);
+            expect(password).toMatch(/\d/);
+            expect(password).toMatch(/[^A-Za-z0-9]/);
+            expect(password).not.toContain("João");
         });
 
         it("dispara sendWelcome não-bloqueante", async () => {

@@ -33,6 +33,9 @@ import { RnmObservacaoImagem } from "../modules/rnm-observacao/entities/rnm-obse
 import { EquipamentoConvenioSisconv } from "../modules/equipamento-convenio/entities/equipamento-convenio-sisconv.entity";
 import { EquipamentoConvenioSispro } from "../modules/equipamento-convenio/entities/equipamento-convenio-sispro.entity";
 import { HospitalTipoAtendimento } from "../modules/hospital/entities/hospital-tipo-atendimento.entity";
+import { TermoAceite } from "../modules/termo/entities/termo-aceite.entity";
+import { AuditoriaEvento } from "../modules/auditoria/entities/auditoria-evento.entity";
+import { AuditoriaAlteracao } from "../modules/auditoria/entities/auditoria-alteracao.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -55,6 +58,8 @@ export const DB_ENTITIES: EntityClass[] = [
     TomoObservacao, TomoObservacaoImagem,
     RnmObservacao, RnmObservacaoImagem,
     EquipamentoConvenioSisconv, EquipamentoConvenioSispro,
+    // Auditoria (schema "auditoria")
+    TermoAceite, AuditoriaEvento, AuditoriaAlteracao,
     HospitalTipoAtendimento,
 ];
 

@@ -23,6 +23,17 @@ import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 import { DocumentType, COMBO_DOCUMENT_TYPES, TOMO_RNM_DOCUMENT_TYPES } from "./document-types";
 import type { AuthRequest } from "../../common/types/auth-request.type";
 
+/**
+ * Usuario de empresa (escopo de combo restrito a empresas especificas).
+ * Admin e gestor geral (escopo null) nao sao restritos.
+ */
+function escopoEmpresaRestrito(req: AuthRequest): boolean {
+    const user = req.user as (AuthRequest["user"] & { companyScopes?: Record<string, number[] | null> }) | undefined;
+    if (!user) return true;
+    if (Array.isArray(user.modules) && user.modules.includes("admin")) return false;
+    return Array.isArray(user.companyScopes?.combo);
+}
+
 // ─── COMBO ────────────────────────────────────────────────────────────────────
 // Rota inclui :companyId para o CompanyScopeGuard validar acesso.
 
@@ -35,12 +46,17 @@ export class DocumentController {
     @Post("upload")
     @UseInterceptors(FileInterceptor("file"))
     async uploadCombo(
+        @Param("companyId", ParseIntPipe) companyId: number,
         @Param("consultId", ParseIntPipe) consultId: number,
         @Body("documentType") documentType: string,
         @UploadedFile() file: Express.Multer.File,
         @Req() req: AuthRequest,
     ) {
         if (!file) throw new BadRequestException("Arquivo não enviado");
+        if (escopoEmpresaRestrito(req)) {
+            await this.service.garantirConsultDaEmpresa(consultId, companyId)
+                .catch(async (err) => { await this.service.descartarUpload(file); throw err; });
+        }
         if (!(COMBO_DOCUMENT_TYPES as readonly string[]).includes(documentType)) {
             throw new BadRequestException(`Tipo inválido para Combo: ${documentType}`);
         }
@@ -54,22 +70,37 @@ export class DocumentController {
     }
 
     @Get()
-    listCombo(@Param("consultId", ParseIntPipe) consultId: number) {
+    async listCombo(
+        @Param("companyId", ParseIntPipe) companyId: number,
+        @Param("consultId", ParseIntPipe) consultId: number,
+        @Req() req: AuthRequest,
+    ) {
+        if (escopoEmpresaRestrito(req)) await this.service.garantirConsultDaEmpresa(consultId, companyId);
         return this.service.findByConsult(consultId);
     }
 
     @Get(":id/download")
     async downloadCombo(
+        @Param("companyId", ParseIntPipe) companyId: number,
+        @Param("consultId", ParseIntPipe) consultId: number,
         @Param("id", ParseIntPipe) id: number,
+        @Req() req: AuthRequest,
         @Res({ passthrough: true }) _res: Response,
     ) {
-        const { stream } = await this.service.getStreamable(id);
+        if (escopoEmpresaRestrito(req)) await this.service.garantirConsultDaEmpresa(consultId, companyId);
+        const { stream } = await this.service.getStreamable(id, { campo: "consultId", valor: consultId });
         return stream;
     }
 
     @Delete(":id")
-    removeCombo(@Param("id", ParseIntPipe) id: number) {
-        return this.service.hardDelete(id);
+    async removeCombo(
+        @Param("companyId", ParseIntPipe) companyId: number,
+        @Param("consultId", ParseIntPipe) consultId: number,
+        @Param("id", ParseIntPipe) id: number,
+        @Req() req: AuthRequest,
+    ) {
+        if (escopoEmpresaRestrito(req)) await this.service.garantirConsultDaEmpresa(consultId, companyId);
+        return this.service.hardDelete(id, { campo: "consultId", valor: consultId });
     }
 }
 
@@ -110,16 +141,20 @@ export class TomoDocumentController {
 
     @Get(":id/download")
     async downloadTomo(
+        @Param("tomoId", ParseIntPipe) tomoId: number,
         @Param("id", ParseIntPipe) id: number,
         @Res({ passthrough: true }) _res: Response,
     ) {
-        const { stream } = await this.service.getStreamable(id);
+        const { stream } = await this.service.getStreamable(id, { campo: "tomoId", valor: tomoId });
         return stream;
     }
 
     @Delete(":id")
-    removeTomo(@Param("id", ParseIntPipe) id: number) {
-        return this.service.hardDelete(id);
+    removeTomo(
+        @Param("tomoId", ParseIntPipe) tomoId: number,
+        @Param("id", ParseIntPipe) id: number,
+    ) {
+        return this.service.hardDelete(id, { campo: "tomoId", valor: tomoId });
     }
 }
 
@@ -160,15 +195,19 @@ export class RnmDocumentController {
 
     @Get(":id/download")
     async downloadRnm(
+        @Param("rnmId", ParseIntPipe) rnmId: number,
         @Param("id", ParseIntPipe) id: number,
         @Res({ passthrough: true }) _res: Response,
     ) {
-        const { stream } = await this.service.getStreamable(id);
+        const { stream } = await this.service.getStreamable(id, { campo: "rnmId", valor: rnmId });
         return stream;
     }
 
     @Delete(":id")
-    removeRnm(@Param("id", ParseIntPipe) id: number) {
-        return this.service.hardDelete(id);
+    removeRnm(
+        @Param("rnmId", ParseIntPipe) rnmId: number,
+        @Param("id", ParseIntPipe) id: number,
+    ) {
+        return this.service.hardDelete(id, { campo: "rnmId", valor: rnmId });
     }
 }

@@ -7,7 +7,7 @@ import { Users } from "../../modules/auth/entities/user.entity";
 import { Role } from "../../modules/role/entities/role.entity";
 import { RoleModule } from "../../modules/role/entities/role-module.entity";
 import { Company } from "../../modules/company/entities/company.entity";
-import { generatePassword, generateLogin } from "../../common/utils/generate-credentials";
+import { generatePassword, generateLogin, generateSecurePassword } from "../../common/utils/generate-credentials";
 import { Uf } from "../../modules/uf/entities/uf.entity";
 import { TransportRtx } from "../../modules/transport-rtx/entities/transport-rtx.entity";
 import { TransportTrs } from "../../modules/transport-trs/entities/transport-trs.entity";
@@ -176,9 +176,15 @@ async function seed() {
     const adminEmail = "admin@ats.gov.br";
     const existing = await userRepo.findOne({ where: { email: adminEmail } });
     if (!existing) {
-        const hashed = await bcrypt.hash("Admin@123", hashAmount);
+        // Senha do admin: SEED_ADMIN_PASSWORD, ou uma senha aleatória exibida uma única vez.
+        // (Antes era fixa "Admin@123", conhecida por quem tem o código.)
+        const senhaInformada = process.env.SEED_ADMIN_PASSWORD?.trim();
+        const senhaAdmin = senhaInformada || generateSecurePassword(16);
+        const hashed = await bcrypt.hash(senhaAdmin, hashAmount);
         await userRepo.save(userRepo.create({ name: "Administrador", surname: "ATS", email: adminEmail, password: hashed }));
-        console.log("  + Usuario admin criado  ->  admin@ats.gov.br / Admin@123");
+        console.log(senhaInformada
+            ? `  + Usuario admin criado  ->  ${adminEmail} (senha de SEED_ADMIN_PASSWORD)`
+            : `  + Usuario admin criado  ->  ${adminEmail} / ${senhaAdmin}   (anote: nao sera exibida de novo)`);
     } else {
         console.log("  - Usuario admin ja existe, pulando.");
     }

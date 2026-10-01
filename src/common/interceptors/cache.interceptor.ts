@@ -20,7 +20,7 @@ export class HttpCacheInterceptor implements NestInterceptor {
     private readonly CACHE_SECONDS = 30;
     private readonly SWR_SECONDS   = 60;
 
-    private readonly NO_CACHE_PATHS = ["/auth", "/hospital/lookup"];
+    private readonly NO_CACHE_PATHS = ["/auth", "/hospital/lookup", "/auditoria"];
 
     intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
         const request  = ctx.switchToHttp().getRequest<Request>();

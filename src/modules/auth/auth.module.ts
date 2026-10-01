@@ -13,10 +13,14 @@ import { Role } from "../role/entities/role.entity";
 import { RoleModule as RoleModuleEntity } from "../role/entities/role-module.entity";
 import { RedisModule } from "../redis/redis.module";
 import { TokenBlocklistService } from "./services/token-blocklist.service";
+import { TermoModule } from "../termo/termo.module";
+import { AuditoriaModule } from "../auditoria/auditoria.module";
 
 @Module({
     imports: [
         RedisModule,
+        TermoModule,
+        AuditoriaModule,
         TypeOrmModule.forFeature([Users, Role, RoleModuleEntity]),
         PassportModule,
         JwtModule.registerAsync({

@@ -36,6 +36,7 @@ import { TomoObservacaoModule } from "./modules/tomo-observacao/tomo-observacao.
 import { RnmObservacaoModule } from "./modules/rnm-observacao/rnm-observacao.module";
 import { EquipamentoConvenioModule } from "./modules/equipamento-convenio/equipamento-convenio.module";
 import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.module";
+import { AceleradoresModule } from "./modules/aceleradores/aceleradores.module";
 
 @Module({
     controllers: [AppController],
@@ -92,6 +93,8 @@ import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.
         EquipamentoConvenioModule,
         // Usuários sem empresa (internos ao DECAN/MS) — restrito a admin
         UsuarioInternoModule,
+        // Planilha de aceleradores lineares (antes servida sem login pelo frontend)
+        AceleradoresModule,
     ],
 })
 export class AppModule {}

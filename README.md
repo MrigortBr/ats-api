@@ -48,7 +48,9 @@ cp .env.example .env
 | `JWT_EXPIRES_IN` | `30m` | Duração do token JWT |
 | `HASH_AMOUNT` | `12` | Rounds do bcrypt para hash de senhas |
 | `SWAGGER_ENABLED` | `false` | Ativa documentação Swagger em `/api` |
-| `CORS_ORIGIN` | `http://localhost:3000` | Domínio do frontend (obrigatório em produção) |
+| `CORS_ORIGIN` | `http://localhost:3000` | Domínio(s) do frontend, separados por vírgula (obrigatório em produção). Também é a lista usada pela proteção anti-CSRF: POST/PUT/PATCH/DELETE vindos de navegador com outra origem recebem 403 |
+| `ACELERADORES_XLSX` | `<pasta da API>/data/Tabelona_Aceleradores.xlsx` | Caminho da planilha de aceleradores lineares servida em `GET /aceleradores` (com login). Para atualizar os dados, substitua o arquivo — a API relê sozinha |
+| `SEED_ADMIN_PASSWORD` | aleatória | Senha do `admin@ats.gov.br` criado pelo seed. Sem a variável, o seed gera uma senha forte e a imprime uma única vez |
 | `MAIL_HOST` | — | Servidor SMTP |
 | `MAIL_PORT` | `587` | Porta SMTP |
 | `MAIL_SECURE` | `false` | TLS/SSL no SMTP |

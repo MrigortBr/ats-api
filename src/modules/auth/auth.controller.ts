@@ -5,6 +5,7 @@ import { AuthService } from "./auth.service";
 import { TokenBlocklistService } from "./services/token-blocklist.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { LoginDto } from "./dto/create-user.dto";
+import { SkipCsrf } from "./decorators/skip-csrf.decorator";
 import * as payload from "./type/payload";
 
 const COOKIE_NAME = "jwt";
@@ -40,6 +41,8 @@ export class AuthController {
     }
 
     @Post("/refresh")
+    // Isento: no 1o carregamento da pagina o front ainda nao tem o token CSRF.
+    @SkipCsrf()
     @UseGuards(JwtAuthGuard)
     async refresh(
         @Req() req: Request,
@@ -49,7 +52,7 @@ export class AuthController {
             req.user as { id: number; email: string; name?: string; surname?: string | null; role?: string | null; roleId?: number | null; modules?: string[]; companyId?: number | null },
         );
         res.cookie(COOKIE_NAME, result.access_token, cookieOptions());
-        return { message: "Token renovado" };
+        return { message: "Token renovado", csrfToken: result.csrfToken };
     }
 
     @Get("/me")

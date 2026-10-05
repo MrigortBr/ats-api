@@ -15,6 +15,7 @@ interface JwtPayload {
     companyScopes?: Record<string, number[] | null>;
     companyId?: number | null;
     jti?: string;
+    csrf?: string;
     exp?: number;
 }
 
@@ -54,6 +55,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             companyScopes: payload.companyScopes ?? {},
             companyId: payload.companyId ?? null,
             jti: payload.jti ?? null,
+            csrfToken: payload.csrf ?? null,
             exp: payload.exp ?? null,
         };
     }

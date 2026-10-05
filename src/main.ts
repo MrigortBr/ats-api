@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
@@ -43,7 +44,7 @@ async function bootstrap() {
     app.enableCors({
         origin: corsOrigin ?? "http://localhost:3000",
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
         credentials: true,
         maxAge: 86400,
     });
@@ -61,6 +62,20 @@ async function bootstrap() {
         }),
     );
 
+    // Documentacao Swagger em /docs -- so fora de producao e so com SWAGGER_ENABLED=true.
+    // Em producao nunca e exposta, mesmo que a variavel esteja ligada por engano.
+    const swaggerOn =
+        process.env.SWAGGER_ENABLED === "true" && process.env.NODE_ENV !== "production";
+    if (swaggerOn) {
+        const config = new DocumentBuilder()
+            .setTitle("ATS API")
+            .setDescription("API do Painel de Acompanhamento de Transportes e Equipamentos")
+            .setVersion("1.0")
+            .addCookieAuth("jwt")
+            .build();
+        SwaggerModule.setup("docs", app, SwaggerModule.createDocument(app, config));
+    }
+
     // Keep-Alive -- reutiliza conexoes TCP
     const server = app.getHttpServer();
     server.keepAliveTimeout = 65_000;
@@ -74,6 +89,7 @@ async function bootstrap() {
     logger.log("-=-=-=-=- ATS API -=-=-=-=-");
     logger.log(`Ready in ${process.uptime().toFixed(1)}s`);
     logger.log(`Local:   http://localhost:${port}`);
+    if (swaggerOn) logger.log(`Docs:    http://localhost:${port}/docs`);
     logger.log("-=-=-=-=--=-=-=-=--=-=-=-=-");
 }
 

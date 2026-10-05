@@ -232,6 +232,35 @@ describe("AuthService", () => {
             );
         });
 
+        it("recalcula o escopo com o companyId do DB, nao o do JWT antigo", async () => {
+            // JWT antigo: usuario sem empresa (irrestrito). Banco: agora na empresa 9.
+            const dbUser = makeUser({
+                companyId: 9,
+                roleEntity: { roleModules: [makeRoleModule("empresa", true)] },
+            });
+            (authRepo.findById as jest.Mock).mockResolvedValue(dbUser);
+
+            await service.refresh({ id: 1, email: "joao@example.com", companyId: null });
+
+            expect(jwtService.sign).toHaveBeenCalledWith(
+                expect.objectContaining({ companyId: 9, companyScopes: { empresa: [9] } }),
+            );
+        });
+
+        it("modules_override entra em modules mas nunca em writeModules", async () => {
+            const dbUser = makeUser({
+                modulesOverride: ["combo"],
+                roleEntity: { roleModules: [makeRoleModule("tomo", true)] },
+            });
+            (authRepo.findById as jest.Mock).mockResolvedValue(dbUser);
+
+            await service.refresh({ id: 1, email: "joao@example.com" });
+
+            expect(jwtService.sign).toHaveBeenCalledWith(
+                expect.objectContaining({ modules: ["tomo", "combo"], writeModules: ["tomo"] }),
+            );
+        });
+
         it("inclui jti fresco a cada refresh", async () => {
             (authRepo.findById as jest.Mock).mockResolvedValue(makeUser());
 

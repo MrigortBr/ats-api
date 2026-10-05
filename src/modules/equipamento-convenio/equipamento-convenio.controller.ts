@@ -6,7 +6,7 @@ import { EquipamentoConvenioService } from "./equipamento-convenio.service";
 import { ImportSisconvDto, ImportSisproDto } from "./dto/import-equipamento-convenio.dto";
 
 @UseGuards(JwtAuthGuard, ModuleGuard)
-@RequiresModule("transporte")
+@RequiresModule("tomo")
 @Controller("/equipamento-convenio")
 export class EquipamentoConvenioController {
     constructor(private readonly service: EquipamentoConvenioService) {}

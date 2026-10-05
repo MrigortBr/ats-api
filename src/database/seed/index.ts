@@ -176,9 +176,17 @@ async function seed() {
     const adminEmail = "admin@ats.gov.br";
     const existing = await userRepo.findOne({ where: { email: adminEmail } });
     if (!existing) {
-        const hashed = await bcrypt.hash("Admin@123", hashAmount);
-        await userRepo.save(userRepo.create({ name: "Administrador", surname: "ATS", email: adminEmail, password: hashed }));
-        console.log("  + Usuario admin criado  ->  admin@ats.gov.br / Admin@123");
+        // Senha vem do ambiente: nunca fica no codigo nem e impressa no console.
+        const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+        if (!adminPassword || adminPassword.length < 12) {
+            console.warn(
+                "  ! Usuario admin NAO criado: defina SEED_ADMIN_PASSWORD (minimo 12 caracteres) e rode o seed de novo.",
+            );
+        } else {
+            const hashed = await bcrypt.hash(adminPassword, hashAmount);
+            await userRepo.save(userRepo.create({ name: "Administrador", surname: "ATS", email: adminEmail, password: hashed }));
+            console.log("  + Usuario admin criado  ->  " + adminEmail + " (senha definida via SEED_ADMIN_PASSWORD)");
+        }
     } else {
         console.log("  - Usuario admin ja existe, pulando.");
     }

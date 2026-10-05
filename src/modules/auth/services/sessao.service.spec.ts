@@ -24,7 +24,7 @@ function sessao(p: Partial<Sessao> = {}): Sessao {
 }
 
 /** Monta o servico com repositorios simulados. `rotacao` = linha devolvida pelo UPDATE ... RETURNING. */
-function montar(opts: { rotacao?: Array<Record<string, unknown>>; existente?: Sessao | null; porId?: Sessao | null } = {}) {
+function montar(opts: { rotacao?: Array<Record<string, unknown>>; existente?: Sessao | null; porId?: Sessao | null; ativa?: Sessao | null; affected?: number } = {}) {
     const execute = jest.fn().mockResolvedValue({ raw: opts.rotacao ?? [] });
     const qb: Record<string, jest.Mock> = {};
     for (const m of ["update", "set", "where", "returning", "delete", "from"]) qb[m] = jest.fn().mockReturnValue(qb);
@@ -34,9 +34,12 @@ function montar(opts: { rotacao?: Array<Record<string, unknown>>; existente?: Se
         createQueryBuilder: jest.fn().mockReturnValue(qb),
         create: jest.fn((x) => x),
         save: jest.fn().mockImplementation(async (x) => ({ ...x, id: "99" })),
-        update: jest.fn().mockResolvedValue({ affected: 1 }),
+        update: jest.fn().mockResolvedValue({ affected: opts.affected ?? 1 }),
+        // rotacionar: findOne por token com revokedAt IsNull() = sessao ativa; sem revokedAt = qualquer (tratarTokenInvalido).
         findOne: jest.fn().mockImplementation(async (q: { where: Record<string, unknown> }) =>
-            "tokenHash" in q.where ? (opts.existente ?? null) : (opts.porId ?? null)),
+            "tokenHash" in q.where
+                ? ("revokedAt" in q.where ? (opts.ativa ?? null) : (opts.existente ?? null))
+                : (opts.porId ?? null)),
     };
     const users = { findOne: jest.fn().mockResolvedValue({ id: 1, email: "a@b.com" }) };
     const auditoria = { registrarSemFalhar: jest.fn().mockResolvedValue(undefined) };
@@ -124,24 +127,23 @@ describe("SessaoService", () => {
     });
 
     describe("rotacionar", () => {
-        const linhaOk = () => ({
-            id: "7", user_id: 1,
-            session_started_at: new Date(Date.now() - 10 * MIN),
-            expires_at: new Date(Date.now() + 60 * MIN),
-        });
-
         it("token ativo: revoga o antigo, cria o proximo elo e devolve o userId", async () => {
-            const { service, sessoes } = montar({ rotacao: [linhaOk()] });
+            const { service, sessoes } = montar({ ativa: sessao() });
 
             const r = await service.rotacionar("tok", ORIGEM);
 
             expect(r.userId).toBe(1);
             expect(r.sid).toBe("99");
+            expect(sessoes.update).toHaveBeenCalledWith(
+                { id: "7", revokedAt: expect.anything() },
+                expect.objectContaining({ revokedReason: "rotacionada" }),
+            );
             expect(sessoes.save).toHaveBeenCalledTimes(1);
+            expect(sessoes.save.mock.calls[0][0].sessionStartedAt).toBeInstanceOf(Date);
         });
 
         it("token inexistente: 401 sem derrubar ninguem", async () => {
-            const { service, sessoes, auditoria } = montar({ rotacao: [], existente: null });
+            const { service, sessoes, auditoria } = montar({ ativa: null, existente: null });
 
             await expect(service.rotacionar("lixo", ORIGEM)).rejects.toThrow(UnauthorizedException);
             expect(sessoes.update).not.toHaveBeenCalled();
@@ -150,7 +152,7 @@ describe("SessaoService", () => {
 
         it("reuso de token rotacionado ha mais de 10 s: derruba todas as sessoes e audita", async () => {
             const existente = sessao({ revokedAt: new Date(Date.now() - 60_000), revokedReason: "rotacionada" });
-            const { service, sessoes, auditoria } = montar({ rotacao: [], existente });
+            const { service, sessoes, auditoria } = montar({ ativa: null, existente });
 
             await expect(service.rotacionar("tok", ORIGEM)).rejects.toThrow(UnauthorizedException);
 
@@ -165,7 +167,7 @@ describe("SessaoService", () => {
 
         it("reuso dentro de 10 s (corrida entre abas): 409, sem derrubar sessoes", async () => {
             const existente = sessao({ revokedAt: new Date(Date.now() - 2_000), revokedReason: "rotacionada" });
-            const { service, sessoes, auditoria } = montar({ rotacao: [], existente });
+            const { service, sessoes, auditoria } = montar({ ativa: null, existente });
 
             await expect(service.rotacionar("tok", ORIGEM)).rejects.toThrow(ConflictException);
             expect(sessoes.update).not.toHaveBeenCalled();
@@ -174,24 +176,29 @@ describe("SessaoService", () => {
 
         it("token revogado por logout: 401 sem alarme de reuso", async () => {
             const existente = sessao({ revokedAt: new Date(Date.now() - 60_000), revokedReason: "logout" });
-            const { service, sessoes, auditoria } = montar({ rotacao: [], existente });
+            const { service, sessoes, auditoria } = montar({ ativa: null, existente });
 
             await expect(service.rotacionar("tok", ORIGEM)).rejects.toThrow(UnauthorizedException);
             expect(sessoes.update).not.toHaveBeenCalled();
             expect(auditoria.registrarSemFalhar).not.toHaveBeenCalled();
         });
 
+        it("duas requisicoes concorrentes: a que perde o UPDATE (affected 0) nao cria sessao", async () => {
+            const { service, sessoes } = montar({ ativa: sessao(), affected: 0, existente: null });
+
+            await expect(service.rotacionar("tok", ORIGEM)).rejects.toThrow(UnauthorizedException);
+            expect(sessoes.save).not.toHaveBeenCalled();
+        });
+
         it("sessao ja expirada por inatividade: 401 e nao cria o proximo elo", async () => {
-            const linha = { ...linhaOk(), expires_at: new Date(Date.now() - MIN) };
-            const { service, sessoes } = montar({ rotacao: [linha] });
+            const { service, sessoes } = montar({ ativa: sessao({ expiresAt: new Date(Date.now() - MIN) }) });
 
             await expect(service.rotacionar("tok", ORIGEM)).rejects.toThrow(UnauthorizedException);
             expect(sessoes.save).not.toHaveBeenCalled();
         });
 
         it("passou do teto absoluto: 401", async () => {
-            const linha = { ...linhaOk(), session_started_at: new Date(Date.now() - 25 * 60 * MIN) };
-            const { service, sessoes } = montar({ rotacao: [linha] });
+            const { service, sessoes } = montar({ ativa: sessao({ sessionStartedAt: new Date(Date.now() - 25 * 60 * MIN) }) });
 
             await expect(service.rotacionar("tok", ORIGEM)).rejects.toThrow(UnauthorizedException);
             expect(sessoes.save).not.toHaveBeenCalled();

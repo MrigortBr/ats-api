@@ -132,25 +132,26 @@ export class SessaoService {
         const hash = sha256Hex(refreshToken);
         const agora = new Date();
 
-        const resultado = await this.sessoes
-            .createQueryBuilder()
-            .update(Sessao)
-            .set({ revokedAt: agora, revokedReason: "rotacionada" })
-            .where("token_hash = :hash AND revoked_at IS NULL", { hash })
-            .returning(["id", "user_id", "session_started_at", "expires_at"])
-            .execute();
-        const linha = (resultado.raw as Array<Record<string, unknown>>)[0];
-
-        if (!linha) {
+        const atual = await this.sessoes.findOne({ where: { tokenHash: hash, revokedAt: IsNull() } });
+        if (!atual) {
             await this.tratarTokenInvalido(hash, origem);
             throw new UnauthorizedException("Sessao invalida ou expirada.");
         }
 
-        const userId = Number(linha.user_id);
-        const inicio = new Date(linha.session_started_at as string | Date);
-        const expiraEm = new Date(linha.expires_at as string | Date);
-        if (expiraEm.getTime() <= agora.getTime() || inicio.getTime() + absolutoMs() <= agora.getTime()) {
-            await this.sessoes.update({ tokenHash: hash }, { revokedReason: "expirada" });
+        // Revogacao atomica: so uma de duas requisicoes concorrentes com o mesmo token afeta a linha.
+        const revogou = await this.sessoes.update(
+            { id: atual.id, revokedAt: IsNull() },
+            { revokedAt: agora, revokedReason: "rotacionada" },
+        );
+        if (!revogou.affected) {
+            await this.tratarTokenInvalido(hash, origem);
+            throw new UnauthorizedException("Sessao invalida ou expirada.");
+        }
+
+        const userId = atual.userId;
+        const inicio = atual.sessionStartedAt;
+        if (atual.expiresAt.getTime() <= agora.getTime() || inicio.getTime() + absolutoMs() <= agora.getTime()) {
+            await this.sessoes.update({ id: atual.id }, { revokedReason: "expirada" });
             throw new UnauthorizedException("Sessao invalida ou expirada.");
         }
 

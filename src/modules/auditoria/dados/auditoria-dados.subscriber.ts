@@ -56,8 +56,10 @@ export class AuditoriaDadosSubscriber implements EntitySubscriberInterface {
     }
 
     private auditavel(m: EntityMetadata | undefined): m is EntityMetadata {
-        // Tabelas da propria auditoria nunca entram (evita recursao).
-        return !!m && m.schema !== "auditoria" && !!contextoAuditoria.getStore();
+        // Tabelas da propria auditoria nunca entram (evita recursao). "sessoes" tambem fica de fora:
+        // e controle de sessao (escrita a cada refresh/uso), nao dado de negocio — o login/logout
+        // e o reuso de token ja geram eventos proprios na trilha.
+        return !!m && m.schema !== "auditoria" && m.tableName !== "sessoes" && !!contextoAuditoria.getStore();
     }
 
     afterInsert(event: InsertEvent<ObjectLiteral>): void {

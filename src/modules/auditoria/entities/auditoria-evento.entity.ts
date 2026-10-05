@@ -5,6 +5,7 @@ export const TIPOS_EVENTO = [
     "LOGIN_SUCESSO",
     "LOGIN_FALHA",
     "LOGOUT",
+    "SESSAO_REUSO",
     "AUDITORIA_CONSULTA",
     "AUDITORIA_VERIFICACAO",
 ] as const;

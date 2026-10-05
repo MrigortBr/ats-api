@@ -10,6 +10,7 @@ import * as bcrypt from "bcrypt";
 import { Users } from "../auth/entities/user.entity";
 import { Role } from "../role/entities/role.entity";
 import { EmailService } from "../email/email.service";
+import { SessaoService } from "../auth/services/sessao.service";
 import { generatePassword } from "../../common/utils/generate-credentials";
 import { CreateUsuarioInternoDto } from "./dto/create-usuario-interno.dto";
 
@@ -33,6 +34,7 @@ export class UsuarioInternoService {
         @InjectRepository(Role)
         private readonly roleRepo: Repository<Role>,
         private readonly emailService: EmailService,
+        private readonly sessaoService: SessaoService,
     ) {}
 
     /** Lista usuários sem empresa (internos — DECAN/MS, admins, gestores gerais, etc). */
@@ -107,6 +109,7 @@ export class UsuarioInternoService {
         const plainPassword = generatePassword(user.name, user.surname);
         const hashed = await bcrypt.hash(plainPassword, Number(process.env.HASH_AMOUNT ?? 12));
         await this.userRepo.update(id, { password: hashed });
+        await this.sessaoService.revogarTodasDoUsuario(id, "senha_alterada");
 
         void this.emailService.sendWelcome({
             to: user.email,
@@ -120,5 +123,6 @@ export class UsuarioInternoService {
         const user = await this.userRepo.findOne({ where: { id, companyId: IsNull() } });
         if (!user) throw new NotFoundException(`Usuário ${id} não encontrado entre os usuários sem empresa`);
         await this.userRepo.softDelete(id);
+        await this.sessaoService.revogarTodasDoUsuario(id, "usuario_removido");
     }
 }

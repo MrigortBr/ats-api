@@ -4,6 +4,7 @@ import { EmpresaAdminService, AdminUser } from "./empresa-admin.service";
 import { Company } from "../company/entities/company.entity";
 import { Users } from "../auth/entities/user.entity";
 import { Role } from "../role/entities/role.entity";
+import { SessaoService } from "../auth/services/sessao.service";
 import { EmailService } from "../email/email.service";
 
 // ─── fábricas ─────────────────────────────────────────────────────────────────
@@ -60,7 +61,8 @@ function makeService(
     roleRepo: Repository<Role>,
     email: EmailService,
 ) {
-    return new EmpresaAdminService(companyRepo, userRepo, roleRepo, email);
+    const sessaoService = { revogarTodasDoUsuario: jest.fn().mockResolvedValue(undefined) } as unknown as SessaoService;
+    return new EmpresaAdminService(companyRepo, userRepo, roleRepo, email, sessaoService);
 }
 
 // ─── usuários de teste (AdminUser) ────────────────────────────────────────────

@@ -1,11 +1,12 @@
-import { randomBytes } from "crypto";
 import { v4 as uuidv4 } from "uuid";
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { AuthRepository } from "./auth.repository";
 import { InvalidCredentialsException } from "./exceptions/invalid.exception";
+import { SessaoService } from "./services/sessao.service";
 import * as payload from "./type/payload";
+import type { RequestOrigin } from "../termo/request-origin";
 
 /**
  * Constrói mapa module → companyIds (null = todas as empresas).
@@ -65,6 +66,7 @@ export class AuthService {
     constructor(
         private readonly authRepository: AuthRepository,
         private readonly jwtService: JwtService,
+        private readonly sessaoService: SessaoService,
     ) {}
 
     async login(data: payload.login) {
@@ -81,10 +83,12 @@ export class AuthService {
             user.companyId ?? null,
         );
 
+        const sessao = await this.sessaoService.criar(user.id);
         const jti = uuidv4();
         const token = this.jwtService.sign({
             jti,
-            csrf:         randomBytes(32).toString("hex"),
+            sid:          sessao.sid,
+            csrf:         sessao.csrf,
             sub:          user.id,
             email:        user.email,
             name:         user.name,
@@ -99,6 +103,9 @@ export class AuthService {
 
         return {
             access_token: token,
+            refresh_token: sessao.refreshToken,
+            sid: sessao.sid,
+            csrfToken: sessao.csrf,
             user: {
                 id:           user.id,
                 name:         user.name,
@@ -114,40 +121,51 @@ export class AuthService {
         };
     }
 
-    async refresh(user: {
-        id: number;
-        email: string;
-        name?: string;
-        surname?: string | null;
-        roleId?: number | null;
-        modules?: string[];
-        companyId?: number | null;
-    }) {
-        // Re-lê o usuário para pegar módulos atualizados (ex: admin mudou permissões)
-        const dbUser = await this.authRepository.findById(user.id);
+    /**
+     * Renova a sessao a partir do refresh token (cookie HttpOnly), mesmo com o JWT de acesso
+     * ja expirado. Rotaciona o refresh token e re-le o usuario/permissoes do banco.
+     */
+    async refresh(refreshToken: string, origem: RequestOrigin) {
+        const sessao = await this.sessaoService.rotacionar(refreshToken, origem);
+
+        // Re-le o usuario para pegar modulos atualizados (ex: admin mudou permissoes).
         // companyId do banco (nao o do JWT antigo): se um admin trocou a empresa do usuario,
         // o escopo novo ja vale neste refresh, igual ao login.
-        const companyId = dbUser?.companyId ?? user.companyId ?? null;
+        const dbUser = await this.authRepository.findById(sessao.userId);
+        if (!dbUser) {
+            await this.sessaoService.revogarPorToken(sessao.refreshToken, "usuario_removido");
+            throw new UnauthorizedException("Sessao invalida ou expirada.");
+        }
         const { modules, writeModules, companyScopes } = resolveAccess(
-            dbUser?.roleEntity?.roleModules ?? [],
-            dbUser?.modulesOverride,
-            companyId,
+            dbUser.roleEntity?.roleModules ?? [],
+            dbUser.modulesOverride,
+            dbUser.companyId ?? null,
         );
 
-        const csrfToken = randomBytes(32).toString("hex");
         const token = this.jwtService.sign({
             jti:          uuidv4(),
-            csrf:         csrfToken,
-            sub:          user.id,
-            email:        user.email,
-            name:         dbUser?.name ?? user.name,
-            surname:      dbUser?.surname ?? user.surname ?? null,
-            roleId:       dbUser?.roleId ?? user.roleId,
+            sid:          sessao.sid,
+            csrf:         sessao.csrf,
+            sub:          dbUser.id,
+            email:        dbUser.email,
+            name:         dbUser.name,
+            surname:      dbUser.surname ?? null,
+            roleId:       dbUser.roleId,
             modules,
             writeModules,
             companyScopes,
-            companyId,
+            companyId:    dbUser.companyId ?? null,
         });
-        return { access_token: token, csrfToken };
+        return { access_token: token, refresh_token: sessao.refreshToken, csrfToken: sessao.csrf };
+    }
+
+    /** Le o JWT de acesso sem lancar erro (expirado/invalido -> null). So para o logout de tokens legados. */
+    lerTokenAcesso(token: string | undefined): { sub?: number; email?: string; jti?: string; sid?: string; exp?: number } | null {
+        if (!token) return null;
+        try {
+            return this.jwtService.verify(token);
+        } catch {
+            return null;
+        }
     }
 }

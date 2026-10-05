@@ -10,6 +10,7 @@ import { Company } from "../company/entities/company.entity";
 import { Users } from "../auth/entities/user.entity";
 import { Role } from "../role/entities/role.entity";
 import { EmailService } from "../email/email.service";
+import { SessaoService } from "../auth/services/sessao.service";
 import {
     CreateCompanyAdminDto,
     UpdateCompanyAdminDto,
@@ -63,6 +64,7 @@ export class EmpresaAdminService {
         @InjectRepository(Role)
         private readonly roleRepo: Repository<Role>,
         private readonly emailService: EmailService,
+        private readonly sessaoService: SessaoService,
     ) {}
 
     // ─── Companies ────────────────────────────────────────────────────────────
@@ -245,6 +247,7 @@ export class EmpresaAdminService {
         }
 
         await this.userRepo.softDelete(userId);
+        await this.sessaoService.revogarTodasDoUsuario(userId, "usuario_removido");
     }
     /** Gera nova senha e reenvia o e-mail de credenciais. */
     async resendCredentials(requestor: AdminUser, companyId: number, userId: number): Promise<void> {
@@ -260,6 +263,7 @@ export class EmpresaAdminService {
         const hashed = await bcrypt.hash(plainPassword, Number(process.env.HASH_AMOUNT ?? 12));
 
         await this.userRepo.update(userId, { password: hashed });
+        await this.sessaoService.revogarTodasDoUsuario(userId, "senha_alterada");
 
         void this.emailService.sendWelcome({
             to:          user.email,

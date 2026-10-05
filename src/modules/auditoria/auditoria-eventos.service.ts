@@ -28,6 +28,8 @@ export interface DetalhesEvento {
     resultado?: Record<string, unknown>;
     /** Identificador do token da sessao (login/logout). */
     sessaoJti?: string | null;
+    /** Id da sessao no banco (tabela sessoes). */
+    sessaoId?: string | null;
 }
 
 export interface NovoEvento {

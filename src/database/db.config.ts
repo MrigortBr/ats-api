@@ -33,6 +33,10 @@ import { RnmObservacaoImagem } from "../modules/rnm-observacao/entities/rnm-obse
 import { EquipamentoConvenioSisconv } from "../modules/equipamento-convenio/entities/equipamento-convenio-sisconv.entity";
 import { EquipamentoConvenioSispro } from "../modules/equipamento-convenio/entities/equipamento-convenio-sispro.entity";
 import { HospitalTipoAtendimento } from "../modules/hospital/entities/hospital-tipo-atendimento.entity";
+import { Sessao } from "../modules/auth/entities/sessao.entity";
+import { TermoAceite } from "../modules/termo/entities/termo-aceite.entity";
+import { AuditoriaEvento } from "../modules/auditoria/entities/auditoria-evento.entity";
+import { AuditoriaAlteracao } from "../modules/auditoria/entities/auditoria-alteracao.entity";
 import { EntitySchema } from "typeorm";
 
 configDotenv();
@@ -40,7 +44,7 @@ configDotenv();
 type EntityClass = (abstract new (...args: unknown[]) => object) | EntitySchema;
 
 export const DB_ENTITIES: EntityClass[] = [
-    Users, Company, Role, RoleModuleEntity,
+    Users, Sessao, Company, Role, RoleModuleEntity,
     Uf, TransportRtx, TransportTrs, GeneralQuota,
     DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue,
     Hospital, HospitalTomo, HospitalRnm, ComboConsult,
@@ -55,6 +59,8 @@ export const DB_ENTITIES: EntityClass[] = [
     TomoObservacao, TomoObservacaoImagem,
     RnmObservacao, RnmObservacaoImagem,
     EquipamentoConvenioSisconv, EquipamentoConvenioSispro,
+    // Auditoria (schema "auditoria")
+    TermoAceite, AuditoriaEvento, AuditoriaAlteracao,
     HospitalTipoAtendimento,
 ];
 

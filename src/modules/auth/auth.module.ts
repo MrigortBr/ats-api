@@ -13,11 +13,17 @@ import { Role } from "../role/entities/role.entity";
 import { RoleModule as RoleModuleEntity } from "../role/entities/role-module.entity";
 import { RedisModule } from "../redis/redis.module";
 import { TokenBlocklistService } from "./services/token-blocklist.service";
+import { SessaoService } from "./services/sessao.service";
+import { Sessao } from "./entities/sessao.entity";
+import { TermoModule } from "../termo/termo.module";
+import { AuditoriaModule } from "../auditoria/auditoria.module";
 
 @Module({
     imports: [
         RedisModule,
-        TypeOrmModule.forFeature([Users, Role, RoleModuleEntity]),
+        TermoModule,
+        AuditoriaModule,
+        TypeOrmModule.forFeature([Users, Sessao, Role, RoleModuleEntity]),
         PassportModule,
         JwtModule.registerAsync({
             useFactory: () => ({
@@ -31,7 +37,7 @@ import { TokenBlocklistService } from "./services/token-blocklist.service";
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, AuthRepository, JwtStrategy, ModuleGuard, Reflector, TokenBlocklistService],
-    exports: [JwtModule, PassportModule, ModuleGuard, Reflector],
+    providers: [AuthService, AuthRepository, JwtStrategy, ModuleGuard, Reflector, TokenBlocklistService, SessaoService],
+    exports: [JwtModule, PassportModule, ModuleGuard, Reflector, SessaoService],
 })
 export class AuthModule {}

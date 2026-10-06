@@ -16,6 +16,15 @@ import {
     DocumentType,
 } from "./document-types";
 
+/**
+ * A qual registro o documento deve pertencer (vem da URL). Evita que alguem
+ * baixe ou apague um documento de outro registro apenas trocando o :id.
+ */
+export interface EscopoDocumento {
+    campo: "consultId" | "tomoId" | "rnmId";
+    valor: number;
+}
+
 export interface UploadParams {
     file: Express.Multer.File;
     documentType: DocumentType;
@@ -123,9 +132,39 @@ export class DocumentService {
 
     // ── DOWNLOAD ──────────────────────────────────────────────────────────────
 
-    async getStreamable(id: number): Promise<{ stream: StreamableFile; doc: Document }> {
-        const doc = await this.docRepo.findOne({ where: { id } });
-        if (!doc) throw new NotFoundException(`Documento ${id} não encontrado`);
+    /** Carrega o documento so se ele pertencer ao registro informado (senao, 404). */
+    private async documentoDoEscopo(id: number, escopo: EscopoDocumento, withDeleted = false): Promise<Document> {
+        const doc = await this.docRepo.findOne({ where: { id }, withDeleted });
+        if (!doc || doc[escopo.campo] !== escopo.valor) {
+            throw new NotFoundException(`Documento ${id} não encontrado`);
+        }
+        return doc;
+    }
+
+    /**
+     * Confere se o combo (combo_consult) pertence a empresa informada.
+     * Usado para usuarios de empresa (escopo restrito) — responde 404 para nao
+     * revelar a existencia de registros de outras empresas.
+     */
+    async garantirConsultDaEmpresa(consultId: number, companyId: number): Promise<void> {
+        const [linha] = await this.docRepo.manager.query(
+            `SELECT company_id FROM combo_consult WHERE id = $1`,
+            [consultId],
+        );
+        if (!linha || linha.company_id === null || Number(linha.company_id) !== companyId) {
+            throw new NotFoundException(`Registro ${consultId} não encontrado`);
+        }
+    }
+
+    /** Remove do disco um arquivo recebido pelo multer cujo upload foi recusado. */
+    async descartarUpload(file: Express.Multer.File | undefined): Promise<void> {
+        if (file?.path && existsSync(file.path)) {
+            await unlink(file.path).catch(() => undefined);
+        }
+    }
+
+    async getStreamable(id: number, escopo: EscopoDocumento): Promise<{ stream: StreamableFile; doc: Document }> {
+        const doc = await this.documentoDoEscopo(id, escopo);
 
         if (!existsSync(doc.storedPath)) {
             // arquivo sumiu do volume — remove o metadado órfão e informa o cliente
@@ -145,18 +184,16 @@ export class DocumentService {
 
     // ── SOFT DELETE ───────────────────────────────────────────────────────────
 
-    async softDelete(id: number): Promise<void> {
-        const doc = await this.docRepo.findOne({ where: { id } });
-        if (!doc) throw new NotFoundException(`Documento ${id} não encontrado`);
+    async softDelete(id: number, escopo: EscopoDocumento): Promise<void> {
+        await this.documentoDoEscopo(id, escopo);
         await this.docRepo.softDelete(id);
         // Arquivo físico permanece no volume (soft-delete apenas marca o registro)
     }
 
     // ── HARD DELETE (admin) ───────────────────────────────────────────────────
 
-    async hardDelete(id: number): Promise<void> {
-        const doc = await this.docRepo.findOne({ where: { id }, withDeleted: true });
-        if (!doc) throw new NotFoundException(`Documento ${id} não encontrado`);
+    async hardDelete(id: number, escopo: EscopoDocumento): Promise<void> {
+        const doc = await this.documentoDoEscopo(id, escopo, true);
 
         if (existsSync(doc.storedPath)) {
             await unlink(doc.storedPath).catch(() => {

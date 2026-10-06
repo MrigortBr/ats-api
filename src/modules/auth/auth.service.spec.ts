@@ -1,3 +1,4 @@
+import { UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 // uuid v14 é ESM — mockar antes de importar o service
@@ -10,6 +11,8 @@ import * as bcrypt from "bcrypt"; // mocked above
 import { AuthRepository } from "./auth.repository";
 import { InvalidCredentialsException } from "./exceptions/invalid.exception";
 import { Users } from "./entities/user.entity";
+import { SessaoService } from "./services/sessao.service";
+import type { RequestOrigin } from "../termo/request-origin";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,17 +47,29 @@ function makeJwtService(): jest.Mocked<JwtService> {
     return { sign: jest.fn().mockReturnValue("signed-token") } as unknown as jest.Mocked<JwtService>;
 }
 
+const ORIGEM: RequestOrigin = { ip: "127.0.0.1", xForwardedFor: null, userAgent: "jest", acceptLanguage: null };
+
+function makeSessaoService(): jest.Mocked<SessaoService> {
+    return {
+        criar: jest.fn().mockResolvedValue({ refreshToken: "refresh-1", sid: "10", csrf: "csrf-1" }),
+        rotacionar: jest.fn().mockResolvedValue({ refreshToken: "refresh-2", sid: "11", csrf: "csrf-2", userId: 1 }),
+        revogarPorToken: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<SessaoService>;
+}
+
 // ─── suite ────────────────────────────────────────────────────────────────────
 
 describe("AuthService", () => {
     let authRepo:   AuthRepository;
     let jwtService: jest.Mocked<JwtService>;
+    let sessaoService: jest.Mocked<SessaoService>;
     let service:    AuthService;
 
     beforeEach(() => {
-        authRepo   = makeRepo();
-        jwtService = makeJwtService();
-        service    = new AuthService(authRepo, jwtService);
+        authRepo      = makeRepo();
+        jwtService    = makeJwtService();
+        sessaoService = makeSessaoService();
+        service       = new AuthService(authRepo, jwtService, sessaoService);
 
         (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     });
@@ -191,52 +206,114 @@ describe("AuthService", () => {
         });
     });
 
+    // sessao no login
+
+    describe("login — sessao", () => {
+        it("cria a sessao e assina o JWT com sid e csrf dela", async () => {
+            (authRepo.findByEmail as jest.Mock).mockResolvedValue(makeUser());
+
+            const result = await service.login({ login: "joao@example.com", password: "ok" });
+
+            expect(sessaoService.criar).toHaveBeenCalledWith(1);
+            expect(jwtService.sign).toHaveBeenCalledWith(expect.objectContaining({ sid: "10", csrf: "csrf-1" }));
+            expect(result.refresh_token).toBe("refresh-1");
+            expect(result.sid).toBe("10");
+        });
+
+        it("nao cria sessao quando a senha nao confere", async () => {
+            (authRepo.findByEmail as jest.Mock).mockResolvedValue(makeUser());
+            (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+            await expect(service.login({ login: "joao@example.com", password: "x" }))
+                .rejects.toThrow(InvalidCredentialsException);
+            expect(sessaoService.criar).not.toHaveBeenCalled();
+        });
+    });
+
     // refresh
 
     describe("refresh", () => {
-        it("retorna novo access_token com modulos atualizados do DB", async () => {
+        it("rotaciona a sessao e devolve novo access_token, refresh_token e csrf", async () => {
+            (authRepo.findById as jest.Mock).mockResolvedValue(makeUser());
+
+            const result = await service.refresh("refresh-1", ORIGEM);
+
+            expect(sessaoService.rotacionar).toHaveBeenCalledWith("refresh-1", ORIGEM);
+            expect(result).toEqual({ access_token: "signed-token", refresh_token: "refresh-2", csrfToken: "csrf-2" });
+            expect(jwtService.sign).toHaveBeenCalledWith(expect.objectContaining({ sid: "11", csrf: "csrf-2", sub: 1 }));
+        });
+
+        it("re-le modulos atualizados do DB", async () => {
             const dbUser = makeUser({
                 roleEntity: { roleModules: [makeRoleModule("tomo", true)] },
             });
             (authRepo.findById as jest.Mock).mockResolvedValue(dbUser);
 
-            const result = await service.refresh({ id: 1, email: "joao@example.com" });
+            await service.refresh("refresh-1", ORIGEM);
 
-            expect(result.access_token).toBe("signed-token");
             expect(jwtService.sign).toHaveBeenCalledWith(
                 expect.objectContaining({ modules: ["tomo"] }),
             );
         });
 
-        it("usa dados do DB para name/surname quando disponivel", async () => {
-            const dbUser = makeUser({ name: "Joao Atualizado", surname: "Silva" });
-            (authRepo.findById as jest.Mock).mockResolvedValue(dbUser);
+        it("usa name/surname do DB", async () => {
+            (authRepo.findById as jest.Mock).mockResolvedValue(makeUser({ name: "Joao Atualizado", surname: "Silva" }));
 
-            await service.refresh({ id: 1, email: "joao@example.com", name: "Nome Antigo" });
+            await service.refresh("refresh-1", ORIGEM);
 
             expect(jwtService.sign).toHaveBeenCalledWith(
                 expect.objectContaining({ name: "Joao Atualizado" }),
             );
         });
 
-        it("usa dados do parametro como fallback quando DB nao retorna user", async () => {
+        it("usuario removido: revoga a sessao recem-criada e lanca 401", async () => {
             (authRepo.findById as jest.Mock).mockResolvedValue(null);
 
-            const result = await service.refresh({
-                id: 1, email: "joao@example.com", name: "Fallback",
-            });
+            await expect(service.refresh("refresh-1", ORIGEM)).rejects.toThrow(UnauthorizedException);
+            expect(sessaoService.revogarPorToken).toHaveBeenCalledWith("refresh-2", "usuario_removido");
+            expect(jwtService.sign).not.toHaveBeenCalled();
+        });
 
-            expect(result.access_token).toBe("signed-token");
+        it("recalcula o escopo com o companyId do DB", async () => {
+            const dbUser = makeUser({
+                companyId: 9,
+                roleEntity: { roleModules: [makeRoleModule("empresa", true)] },
+            });
+            (authRepo.findById as jest.Mock).mockResolvedValue(dbUser);
+
+            await service.refresh("refresh-1", ORIGEM);
+
             expect(jwtService.sign).toHaveBeenCalledWith(
-                expect.objectContaining({ name: "Fallback" }),
+                expect.objectContaining({ companyId: 9, companyScopes: { empresa: [9] } }),
             );
+        });
+
+        it("modules_override entra em modules mas nunca em writeModules", async () => {
+            const dbUser = makeUser({
+                modulesOverride: ["combo"],
+                roleEntity: { roleModules: [makeRoleModule("tomo", true)] },
+            });
+            (authRepo.findById as jest.Mock).mockResolvedValue(dbUser);
+
+            await service.refresh("refresh-1", ORIGEM);
+
+            expect(jwtService.sign).toHaveBeenCalledWith(
+                expect.objectContaining({ modules: ["tomo", "combo"], writeModules: ["tomo"] }),
+            );
+        });
+
+        it("propaga o erro quando a rotacao falha (token invalido/reusado)", async () => {
+            sessaoService.rotacionar.mockRejectedValue(new UnauthorizedException("Sessao invalida ou expirada."));
+
+            await expect(service.refresh("lixo", ORIGEM)).rejects.toThrow(UnauthorizedException);
+            expect(authRepo.findById).not.toHaveBeenCalled();
         });
 
         it("inclui jti fresco a cada refresh", async () => {
             (authRepo.findById as jest.Mock).mockResolvedValue(makeUser());
 
-            await service.refresh({ id: 1, email: "joao@example.com" });
-            await service.refresh({ id: 1, email: "joao@example.com" });
+            await service.refresh("refresh-1", ORIGEM);
+            await service.refresh("refresh-1", ORIGEM);
 
             const calls = jwtService.sign.mock.calls;
             expect(calls[0][0].jti).not.toBe(calls[1][0].jti);

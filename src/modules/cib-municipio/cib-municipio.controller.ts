@@ -3,6 +3,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 import { CibMunicipioService } from "./cib-municipio.service";
+import { UpdateCibMunicipioDto } from "./dto/update-cib-municipio.dto";
 
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("transporte")
@@ -23,15 +24,7 @@ export class CibMunicipioController {
     @Put(":id")
     update(
         @Param("id") id: string,
-        @Body()
-        body: {
-            nomeMunicipio?: string;
-            regiaoSaude?: string;
-            radioterapia?: boolean;
-            trsHemodialise?: boolean;
-            veiculos?: string;
-            ibge?: string;
-        },
+        @Body() body: UpdateCibMunicipioDto,
     ) {
         return this.service.updateById(Number(id), body);
     }

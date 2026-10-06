@@ -3,6 +3,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
 import { CotaGeralMunicipioService } from "./cota-geral-municipio.service";
+import { UpdateCotaGeralMunicipioDto } from "./dto/update-cota-geral-municipio.dto";
 @UseGuards(JwtAuthGuard, ModuleGuard)
 @RequiresModule("transporte")
 @Controller("/cota-geral-municipio")
@@ -18,7 +19,7 @@ export class CotaGeralMunicipioController {
     @Put(":id")
     update(
         @Param("id") id: string,
-        @Body() body: { van?: number; ambulancia?: number; microonibus?: number },
+        @Body() body: UpdateCotaGeralMunicipioDto,
     ) {
         return this.service.updateById(Number(id), body);
     }

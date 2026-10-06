@@ -10,11 +10,13 @@ import { Company } from "../company/entities/company.entity";
 import { Users } from "../auth/entities/user.entity";
 import { Role } from "../role/entities/role.entity";
 import { EmailService } from "../email/email.service";
+import { SessaoService } from "../auth/services/sessao.service";
 import {
     CreateCompanyAdminDto,
     UpdateCompanyAdminDto,
     CreateCompanyUserDto,
 } from "./dto/empresa-admin.dto";
+import { generateSecurePassword } from "../../common/utils/generate-credentials";
 
 /** Usuário autenticado extraído do JWT pelo JwtAuthGuard. */
 export interface AdminUser {
@@ -46,16 +48,10 @@ function assertCompanyScope(user: AdminUser, targetCompanyId: number): void {
 }
 
 /** Gera senha inicial: PrimeiroNomeÚltimoNome + 3 chars empresa + 3 dígitos. */
-function generatePassword(
-    firstName: string,
-    lastName: string,
-    companyName: string,
-): string {
-    const companyPart = companyName.replace(/\s/g, "").slice(0, 3).toUpperCase();
-    const digits = Array.from({ length: 3 }, () =>
-        String(Math.floor(Math.random() * 9) + 1),
-    ).join("");
-    return `${firstName}${lastName}${companyPart}${digits}`;
+/** Senha inicial aleatória e segura (antes: Nome+Sobrenome+3 letras da empresa+3 dígitos). */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function generatePassword(_firstName: string, _lastName: string, _companyName: string): string {
+    return generateSecurePassword();
 }
 
 @Injectable()
@@ -68,6 +64,7 @@ export class EmpresaAdminService {
         @InjectRepository(Role)
         private readonly roleRepo: Repository<Role>,
         private readonly emailService: EmailService,
+        private readonly sessaoService: SessaoService,
     ) {}
 
     // ─── Companies ────────────────────────────────────────────────────────────
@@ -250,6 +247,7 @@ export class EmpresaAdminService {
         }
 
         await this.userRepo.softDelete(userId);
+        await this.sessaoService.revogarTodasDoUsuario(userId, "usuario_removido");
     }
     /** Gera nova senha e reenvia o e-mail de credenciais. */
     async resendCredentials(requestor: AdminUser, companyId: number, userId: number): Promise<void> {
@@ -265,6 +263,7 @@ export class EmpresaAdminService {
         const hashed = await bcrypt.hash(plainPassword, Number(process.env.HASH_AMOUNT ?? 12));
 
         await this.userRepo.update(userId, { password: hashed });
+        await this.sessaoService.revogarTodasDoUsuario(userId, "senha_alterada");
 
         void this.emailService.sendWelcome({
             to:          user.email,

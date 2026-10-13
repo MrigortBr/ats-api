@@ -2,12 +2,12 @@ import { ModuleGuard } from "./module.guard";
 import { ExecutionContext, ForbiddenException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 
-function makeContext(modules: string[]): ExecutionContext {
+function makeContext(modules: string[], method = "GET", writeModules: string[] = []): ExecutionContext {
     return {
         getHandler: () => ({}),
         getClass:   () => ({}),
         switchToHttp: () => ({
-            getRequest: () => ({ user: { modules } }),
+            getRequest: () => ({ method, user: { modules, writeModules } }),
         }),
     } as unknown as ExecutionContext;
 }
@@ -27,22 +27,22 @@ describe("ModuleGuard", () => {
     });
 
     it("permite quando o usuário tem o módulo requerido", () => {
-        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("transporte");
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["transporte"]);
         expect(guard.canActivate(makeContext(["transporte", "tomo"]))).toBe(true);
     });
 
     it("lança ForbiddenException quando módulo não está nos módulos do usuário", () => {
-        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("admin");
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["admin"]);
         expect(() => guard.canActivate(makeContext(["transporte"]))).toThrow(ForbiddenException);
     });
 
     it("lança ForbiddenException quando usuário não tem nenhum módulo", () => {
-        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("tomo");
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["tomo"]);
         expect(() => guard.canActivate(makeContext([]))).toThrow(ForbiddenException);
     });
 
     it("a mensagem do erro identifica o módulo negado", () => {
-        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("combo");
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["combo"]);
         try {
             guard.canActivate(makeContext(["transporte"]));
             fail("deveria ter lançado exceção");
@@ -50,5 +50,25 @@ describe("ModuleGuard", () => {
             expect(e).toBeInstanceOf(ForbiddenException);
             expect((e as ForbiddenException).message).toContain("combo");
         }
+    });
+
+    it("aceita qualquer módulo da lista (lógica OR)", () => {
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["combo", "tomo"]);
+        expect(guard.canActivate(makeContext(["tomo"]))).toBe(true);
+    });
+
+    it("admin acessa qualquer módulo, inclusive em escrita", () => {
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["combo"]);
+        expect(guard.canActivate(makeContext(["admin"], "POST"))).toBe(true);
+    });
+
+    it("bloqueia escrita quando o módulo é somente leitura", () => {
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["combo"]);
+        expect(() => guard.canActivate(makeContext(["combo"], "POST", []))).toThrow(ForbiddenException);
+    });
+
+    it("permite escrita quando o módulo está em writeModules", () => {
+        jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(["combo"]);
+        expect(guard.canActivate(makeContext(["combo"], "PATCH", ["combo"]))).toBe(true);
     });
 });

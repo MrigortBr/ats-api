@@ -6,6 +6,7 @@ import { HospitalService } from "./hospital.service";
 import { Hospital } from "./entities/hospital.entity";
 import { HospitalTomo } from "./entities/hospital-tomo.entity";
 import { HospitalRnm } from "./entities/hospital-rnm.entity";
+import { HospitalTipoAtendimento } from "./entities/hospital-tipo-atendimento.entity";
 import { Uf } from "../uf/entities/uf.entity";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ describe("HospitalService", () => {
                 { provide: getRepositoryToken(Hospital),     useValue: hospitalRepo },
                 { provide: getRepositoryToken(HospitalTomo), useValue: tomoRepo },
                 { provide: getRepositoryToken(HospitalRnm),  useValue: rnmRepo },
+                { provide: getRepositoryToken(HospitalTipoAtendimento), useValue: { find: jest.fn().mockResolvedValue([]) } },
                 { provide: getRepositoryToken(Uf),           useValue: repoStub() },
                 { provide: DataSource,                       useValue: { transaction: jest.fn() } },
             ],
@@ -76,7 +78,7 @@ describe("HospitalService", () => {
 
             const result = await service.findAllTomo();
 
-            expect(result).toEqual(tomos);
+            expect(result).toEqual(tomos.map(t => ({ ...t, tiposAtendimento: [] })));
             expect(tomoRepo.find).toHaveBeenCalledWith(
                 expect.objectContaining({ relations: { hospital: { uf: true } } }),
             );
@@ -114,7 +116,7 @@ describe("HospitalService", () => {
 
             const result = await service.findAllRnm();
 
-            expect(result).toEqual(rnms);
+            expect(result).toEqual(rnms.map(r => ({ ...r, tiposAtendimento: [] })));
             expect(rnmRepo.find).toHaveBeenCalledWith(
                 expect.objectContaining({ relations: { hospital: { uf: true } } }),
             );

@@ -17,6 +17,11 @@ import { ComboConsult } from "../modules/hospital/entities/combo-consult.entity"
 import { CibDocument } from "../modules/cib/entities/cib-document.entity";
 import { RnmDocument } from "../modules/rnm-document/entities/rnm-document.entity";
 import { UfFluxoComentario } from "../modules/uf/entities/uf-fluxo-comentario.entity";
+import { CusteioResponsavel } from "../modules/custeio/entities/custeio-responsavel.entity";
+import { CusteioAtendido } from "../modules/custeio/entities/custeio-atendido.entity";
+import { CusteioMunicipioRef } from "../modules/custeio/entities/custeio-municipio-ref.entity";
+import { CusteioProjecao } from "../modules/custeio/entities/custeio-projecao.entity";
+import { CusteioDistanciaCache } from "../modules/custeio/entities/custeio-distancia-cache.entity";
 import { CotaGeralMunicipio } from "../modules/cota-geral-municipio/entities/cota-geral-municipio.entity";
 import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.entity";
 import { Document } from "../modules/document/entities/document.entity";
@@ -25,6 +30,7 @@ import { AceleradorObservacao } from "../modules/acelerador-observacao/entities/
 import { ComboEquipamentoObservacao } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao.entity";
 import { ComboEquipamentoObservacaoImagem } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao-imagem.entity";
 import { ComboEstabelecimentoObservacao } from "../modules/combo-estabelecimento-observacao/entities/combo-estabelecimento-observacao.entity";
+import { ProducaoComboMensal } from "../modules/combo-producao/entities/producao-combo-mensal.entity";
 import { ComboEstabelecimentoObservacaoImagem } from "../modules/combo-estabelecimento-observacao/entities/combo-estabelecimento-observacao-imagem.entity";
 import { TomoObservacao } from "../modules/tomo-observacao/entities/tomo-observacao.entity";
 import { TomoObservacaoImagem } from "../modules/tomo-observacao/entities/tomo-observacao-imagem.entity";
@@ -48,7 +54,7 @@ export const DB_ENTITIES: EntityClass[] = [
     Uf, TransportRtx, TransportTrs, GeneralQuota,
     DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue,
     Hospital, HospitalTomo, HospitalRnm, ComboConsult,
-    CibDocument, RnmDocument, CotaGeralMunicipio,
+    CibDocument, RnmDocument, CotaGeralMunicipio, CusteioResponsavel, CusteioAtendido, CusteioMunicipioRef, CusteioDistanciaCache, CusteioProjecao,
     EmpresaProblem,
     Document,
     TomoDocument,
@@ -56,6 +62,7 @@ export const DB_ENTITIES: EntityClass[] = [
     AceleradorObservacao,
     ComboEquipamentoObservacao, ComboEquipamentoObservacaoImagem,
     ComboEstabelecimentoObservacao, ComboEstabelecimentoObservacaoImagem,
+    ProducaoComboMensal,
     TomoObservacao, TomoObservacaoImagem,
     RnmObservacao, RnmObservacaoImagem,
     EquipamentoConvenioSisconv, EquipamentoConvenioSispro,

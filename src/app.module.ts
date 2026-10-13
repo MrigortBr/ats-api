@@ -22,6 +22,7 @@ import { ConsolidadoModule } from "./modules/consolidado/consolidado.module";
 import { HospitalModule } from "./modules/hospital/hospital.module";
 import { CibModule } from "./modules/cib/cib.module";
 import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
+import { CusteioModule } from "./modules/custeio/custeio.module";
 import { CotaGeralMunicipioModule } from "./modules/cota-geral-municipio/cota-geral-municipio.module";
 import { CibMunicipioModule } from "./modules/cib-municipio/cib-municipio.module";
 import { CompanyModule } from "./modules/company/company.module";
@@ -31,6 +32,7 @@ import { DocumentModule } from "./modules/document/document.module";
 import { TomoDocumentModule } from "./modules/tomo-document/tomo-document.module";
 import { AceleradorObservacaoModule } from "./modules/acelerador-observacao/acelerador-observacao.module";
 import { ComboEquipamentoObservacaoModule } from "./modules/combo-equipamento-observacao/combo-equipamento-observacao.module";
+import { ComboProducaoModule } from "./modules/combo-producao/combo-producao.module";
 import { ComboEstabelecimentoObservacaoModule } from "./modules/combo-estabelecimento-observacao/combo-estabelecimento-observacao.module";
 import { TomoObservacaoModule } from "./modules/tomo-observacao/tomo-observacao.module";
 import { RnmObservacaoModule } from "./modules/rnm-observacao/rnm-observacao.module";
@@ -70,6 +72,7 @@ import { AceleradoresModule } from "./modules/aceleradores/aceleradores.module";
         RnmDocumentModule,
         // Cota Geral - Municipios
         CotaGeralMunicipioModule,
+        CusteioModule,
         // CIB - Municipios (RTx/TRS pactuados nas deliberacoes de CIB)
         CibMunicipioModule,
         // RBAC / Multi-tenant
@@ -86,6 +89,8 @@ import { AceleradoresModule } from "./modules/aceleradores/aceleradores.module";
         ComboEquipamentoObservacaoModule,
         // Combo Estabelecimento — observações com auditoria
         ComboEstabelecimentoObservacaoModule,
+        // Combo Estabelecimento — produção mensal (SIA/SIH) por CNES
+        ComboProducaoModule,
         // TOMO / RNM — observações com auditoria e anexo de imagens
         TomoObservacaoModule,
         RnmObservacaoModule,

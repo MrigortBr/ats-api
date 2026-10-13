@@ -13,6 +13,7 @@ const MODULO_POR_SEGMENTO: Record<string, ModuloAuditado> = {
     "cib":                   "transporte",
     "cib-municipio":         "transporte",
     "transport-value":       "transporte",
+    "custeio":               "transporte",
     // Equipamentos (TOMO, RNM, combos, aceleradores, convenios)
     "hospital":                          "equipamentos",
     "tomo-doc":                          "equipamentos",

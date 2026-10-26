@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Uf } from "./uf.entity";
 
 @Entity("uf_fluxo_comentarios")
@@ -24,4 +24,7 @@ export class UfFluxoComentario {
 
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 }

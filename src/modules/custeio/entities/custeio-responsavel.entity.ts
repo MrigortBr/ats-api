@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn, type Relation } from "typeorm";
+import { Column, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, type Relation } from "typeorm";
 import { CusteioAtendido } from "./custeio-atendido.entity";
 
 @Entity("custeio_responsavel")
@@ -44,6 +44,9 @@ export class CusteioResponsavel {
 
     @Column({ name: "divisao_indice", type: "integer", nullable: true })
     divisaoIndice!: number | null;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 
     @OneToMany(() => CusteioAtendido, (a) => a.responsavel)
     atendidos!: Relation<CusteioAtendido>[];

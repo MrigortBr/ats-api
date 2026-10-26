@@ -100,7 +100,7 @@ export class DocumentController {
         @Req() req: AuthRequest,
     ) {
         if (escopoEmpresaRestrito(req)) await this.service.garantirConsultDaEmpresa(consultId, companyId);
-        return this.service.hardDelete(id, { campo: "consultId", valor: consultId });
+        return this.service.softDelete(id, { campo: "consultId", valor: consultId });
     }
 }
 
@@ -154,7 +154,7 @@ export class TomoDocumentController {
         @Param("tomoId", ParseIntPipe) tomoId: number,
         @Param("id", ParseIntPipe) id: number,
     ) {
-        return this.service.hardDelete(id, { campo: "tomoId", valor: tomoId });
+        return this.service.softDelete(id, { campo: "tomoId", valor: tomoId });
     }
 }
 
@@ -208,6 +208,6 @@ export class RnmDocumentController {
         @Param("rnmId", ParseIntPipe) rnmId: number,
         @Param("id", ParseIntPipe) id: number,
     ) {
-        return this.service.hardDelete(id, { campo: "rnmId", valor: rnmId });
+        return this.service.softDelete(id, { campo: "rnmId", valor: rnmId });
     }
 }

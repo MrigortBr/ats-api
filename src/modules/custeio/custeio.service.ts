@@ -350,7 +350,7 @@ export class CusteioService {
 
             const manter = new Set(ids);
             const remover = existentes.filter((r) => !manter.has(r.id));
-            if (remover.length) await respRepo.remove(remover);
+            if (remover.length) await respRepo.softRemove(remover);
 
             for (let i = 0; i < dto.responsaveis.length; i++) {
                 const r = dto.responsaveis[i];
@@ -398,7 +398,7 @@ export class CusteioService {
                     const antigos = atual.atendidos;
                     atual.atendidos = [];
                     resp = await respRepo.save(atual);
-                    if (antigos.length) await atendRepo.remove(antigos);
+                    if (antigos.length) await atendRepo.softRemove(antigos);
                 } else {
                     resp = await respRepo.save(
                         respRepo.create({
@@ -477,7 +477,7 @@ export class CusteioService {
             atual.atendidos = [];
             await respRepo.save(atual);
 
-            if (antigos.length > 0) await atendRepo.remove(antigos);
+            if (antigos.length > 0) await atendRepo.softRemove(antigos);
             await atendRepo.save(
                 dto.atendidos.map((a, i) =>
                     atendRepo.create({

@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import type { RnmObservacaoImagem } from "./rnm-observacao-imagem.entity";
 
 @Entity("rnm_observacoes")
@@ -20,6 +20,9 @@ export class RnmObservacao {
 
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     @OneToMany(() => require("./rnm-observacao-imagem.entity").RnmObservacaoImagem, (img: RnmObservacaoImagem) => img.observacao)

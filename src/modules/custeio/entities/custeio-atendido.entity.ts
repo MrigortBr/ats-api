@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, type Relation } from "typeorm";
+import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, type Relation } from "typeorm";
 import { CusteioResponsavel } from "./custeio-responsavel.entity";
 
 const decimal = {
@@ -52,4 +52,7 @@ export class CusteioAtendido {
     /** UF da cidade de referência quando o deslocamento é interestadual; nulo = mesma UF do custeio. */
     @Column({ name: "ref_uf", type: "char", length: 2, nullable: true })
     refUf!: string | null;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 }

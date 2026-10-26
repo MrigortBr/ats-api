@@ -28,6 +28,6 @@ export class AceleradorObservacaoService {
     async delete(id: number): Promise<void> {
         const item = await this.repo.findOne({ where: { id } });
         if (!item) throw new NotFoundException(`Observação ${id} não encontrada`);
-        await this.repo.remove(item);
+        await this.repo.softDelete(id);
     }
 }

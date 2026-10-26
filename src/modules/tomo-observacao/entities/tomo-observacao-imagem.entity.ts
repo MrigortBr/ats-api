@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import type { TomoObservacao } from "./tomo-observacao.entity";
 
 @Entity("tomo_observacao_imagens")
@@ -32,4 +32,7 @@ export class TomoObservacaoImagem {
 
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 }

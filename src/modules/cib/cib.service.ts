@@ -53,6 +53,6 @@ export class CibService {
     async delete(id: number): Promise<void> {
         const doc = await this.repo.findOne({ where: { id } });
         if (!doc) throw new NotFoundException(`CIB #${id} não encontrado`);
-        await this.repo.remove(doc);
+        await this.repo.softDelete(id);
     }
 }

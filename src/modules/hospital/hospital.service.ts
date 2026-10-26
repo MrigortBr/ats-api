@@ -202,6 +202,9 @@ export class HospitalService {
                 hospitalId = hospital.id;
             } else {
                 hospitalId = existing.id;
+                if (existing.deletedAt) {
+                    await em.restore(Hospital, { id: hospitalId });
+                }
             }
 
             if (module === "tomo") {
@@ -265,7 +268,7 @@ export class HospitalService {
         return { created, skipped, errors };
     }
 
-    // ── DELETE HOSPITAL (hard delete — base + todos os vínculos) ─────────────
+    // ── DELETE HOSPITAL (soft delete — base + vínculos TOMO/RNM) ─────────────
 
     async deleteHospital(id: number): Promise<void> {
         const hospital = await this.hospitalRepo.findOne({
@@ -275,9 +278,9 @@ export class HospitalService {
         if (!hospital) throw new NotFoundException(`Hospital ${id} não encontrado`);
 
         await this.dataSource.transaction(async (em) => {
-            if (hospital.tomo) await em.remove(hospital.tomo);
-            if (hospital.rnm)  await em.remove(hospital.rnm);
-            await em.remove(hospital);
+            if (hospital.tomo) await em.softDelete(HospitalTomo, hospital.tomo.id);
+            if (hospital.rnm)  await em.softDelete(HospitalRnm, hospital.rnm.id);
+            await em.softDelete(Hospital, hospital.id);
         });
     }
 

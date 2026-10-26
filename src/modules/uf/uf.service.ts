@@ -45,6 +45,6 @@ export class UfService {
     async deleteComentario(id: number): Promise<void> {
         const item = await this.comentarioRepo.findOne({ where: { id } });
         if (!item) throw new NotFoundException(`Comentário ${id} não encontrado`);
-        await this.comentarioRepo.remove(item);
+        await this.comentarioRepo.softDelete(id);
     }
 }

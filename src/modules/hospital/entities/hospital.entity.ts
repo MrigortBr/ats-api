@@ -1,6 +1,7 @@
 import {
     Column,
     CreateDateColumn,
+    DeleteDateColumn,
     Entity,
     JoinColumn,
     ManyToOne,
@@ -46,6 +47,9 @@ export class Hospital {
 
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     @OneToOne(() => require("./hospital-tomo.entity").HospitalTomo, (t: HospitalTomo) => t.hospital)

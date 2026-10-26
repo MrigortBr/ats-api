@@ -73,6 +73,6 @@ export class ByteaDocumentService<T extends ByteaDocumentEntity> {
     async delete(id: number): Promise<void> {
         const doc: T | null = await this.repo.findOne({ where: { id } });
         if (!doc) throw new NotFoundException(`Documento ${this.label} #${id} não encontrado`);
-        await this.repo.remove(doc);
+        await this.repo.softDelete(id);
     }
 }

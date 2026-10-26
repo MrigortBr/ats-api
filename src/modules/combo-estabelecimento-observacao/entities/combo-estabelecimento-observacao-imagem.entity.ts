@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import type { ComboEstabelecimentoObservacao } from "./combo-estabelecimento-observacao.entity";
 
 @Entity("combo_estabelecimento_observacao_imagens")
@@ -32,4 +32,7 @@ export class ComboEstabelecimentoObservacaoImagem {
 
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 }

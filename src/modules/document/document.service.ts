@@ -100,7 +100,7 @@ export class DocumentService {
         }
 
         if (orphans.length > 0) {
-            await this.docRepo.remove(orphans);
+            await this.docRepo.softRemove(orphans);
         }
 
         return alive;
@@ -167,10 +167,10 @@ export class DocumentService {
         const doc = await this.documentoDoEscopo(id, escopo);
 
         if (!existsSync(doc.storedPath)) {
-            // arquivo sumiu do volume — remove o metadado órfão e informa o cliente
-            await this.docRepo.remove(doc);
+            // arquivo sumiu do volume — inativa o metadado órfão e informa o cliente
+            await this.docRepo.softRemove(doc);
             throw new NotFoundException(
-                `Arquivo não encontrado no volume. O registro foi removido automaticamente.`,
+                `Arquivo não encontrado no volume. O registro foi inativado automaticamente.`,
             );
         }
 
@@ -190,17 +190,4 @@ export class DocumentService {
         // Arquivo físico permanece no volume (soft-delete apenas marca o registro)
     }
 
-    // ── HARD DELETE (admin) ───────────────────────────────────────────────────
-
-    async hardDelete(id: number, escopo: EscopoDocumento): Promise<void> {
-        const doc = await this.documentoDoEscopo(id, escopo, true);
-
-        if (existsSync(doc.storedPath)) {
-            await unlink(doc.storedPath).catch(() => {
-                // ignora erro de IO — registro ainda será removido
-            });
-        }
-
-        await this.docRepo.remove(doc);
-    }
 }

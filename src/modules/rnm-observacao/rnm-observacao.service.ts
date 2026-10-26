@@ -46,7 +46,8 @@ export class RnmObservacaoService {
     async delete(id: number): Promise<void> {
         const item = await this.repo.findOne({ where: { id } });
         if (!item) throw new NotFoundException(`Observação ${id} não encontrada`);
-        await this.repo.remove(item); // cascade de imagens é feito pela FK (ON DELETE CASCADE)
+        await this.imagemRepo.softDelete({ observacaoId: id });
+        await this.repo.softDelete(id);
     }
 
     // ── Imagens ──────────────────────────────────────────────────────────────
@@ -76,6 +77,6 @@ export class RnmObservacaoService {
     async deleteImagem(id: number): Promise<void> {
         const imagem = await this.imagemRepo.findOne({ where: { id } });
         if (!imagem) throw new NotFoundException(`Imagem ${id} não encontrada`);
-        await this.imagemRepo.remove(imagem);
+        await this.imagemRepo.softDelete(id);
     }
 }

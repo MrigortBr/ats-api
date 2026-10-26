@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import type { TomoObservacaoImagem } from "./tomo-observacao-imagem.entity";
 
 @Entity("tomo_observacoes")
@@ -20,6 +20,9 @@ export class TomoObservacao {
 
     @CreateDateColumn({ name: "created_at" })
     createdAt!: Date;
+
+    @DeleteDateColumn({ name: "deleted_at" })
+    deletedAt!: Date | null;
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     @OneToMany(() => require("./tomo-observacao-imagem.entity").TomoObservacaoImagem, (img: TomoObservacaoImagem) => img.observacao)

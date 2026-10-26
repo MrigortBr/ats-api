@@ -161,7 +161,7 @@ export class HospitalController {
         return this.comboService.applyStatusImport(dto.rows, dto.allowPositionalPairing ?? false);
     }
 
-    // ── Hard delete hospital (admin) ──────────────────────────────────────────
+    // ── Soft delete hospital (admin) ──────────────────────────────────────────
 
     @Delete(":id")
     @RequiresModule("admin")

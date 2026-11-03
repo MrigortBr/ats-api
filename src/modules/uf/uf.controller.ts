@@ -11,6 +11,11 @@ import { UpdateUfDto } from "./dto/uf.dto";
 export class UfController {
     constructor(private readonly service: UfService) {}
 
+    @Get()
+    findAll() {
+        return this.service.findAll();
+    }
+
     @Get(":id")
     findById(@Param("id") id: string) {
         return this.service.findById(Number(id));

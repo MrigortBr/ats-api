@@ -21,6 +21,7 @@ import { CusteioResponsavel } from "../modules/custeio/entities/custeio-responsa
 import { CusteioAtendido } from "../modules/custeio/entities/custeio-atendido.entity";
 import { CusteioMunicipioRef } from "../modules/custeio/entities/custeio-municipio-ref.entity";
 import { CusteioProjecao } from "../modules/custeio/entities/custeio-projecao.entity";
+import { CusteioIncentivoProjecao } from "../modules/custeio/entities/custeio-incentivo-projecao.entity";
 import { CusteioDistanciaCache } from "../modules/custeio/entities/custeio-distancia-cache.entity";
 import { CotaGeralMunicipio } from "../modules/cota-geral-municipio/entities/cota-geral-municipio.entity";
 import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.entity";
@@ -54,7 +55,7 @@ export const DB_ENTITIES: EntityClass[] = [
     Uf, TransportRtx, TransportTrs, GeneralQuota,
     DeliveredRtxTrs, DeliveredGeneralQuota, TransportValue,
     Hospital, HospitalTomo, HospitalRnm, ComboConsult,
-    CibDocument, RnmDocument, CotaGeralMunicipio, CusteioResponsavel, CusteioAtendido, CusteioMunicipioRef, CusteioDistanciaCache, CusteioProjecao,
+    CibDocument, RnmDocument, CotaGeralMunicipio, CusteioResponsavel, CusteioAtendido, CusteioMunicipioRef, CusteioDistanciaCache, CusteioProjecao, CusteioIncentivoProjecao,
     EmpresaProblem,
     Document,
     TomoDocument,

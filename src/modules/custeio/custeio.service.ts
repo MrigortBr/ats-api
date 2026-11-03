@@ -5,6 +5,7 @@ import { CusteioResponsavel } from "./entities/custeio-responsavel.entity";
 import { CusteioAtendido } from "./entities/custeio-atendido.entity";
 import { CusteioMunicipioRef } from "./entities/custeio-municipio-ref.entity";
 import { CusteioProjecao } from "./entities/custeio-projecao.entity";
+import { CusteioIncentivoProjecao } from "./entities/custeio-incentivo-projecao.entity";
 import { CreateCusteioResponsavelDto, SyncCusteioUfDto, UpdateCusteioResponsavelDto } from "./dto/custeio.dto";
 
 export interface CusteioAtendidoView {
@@ -86,6 +87,11 @@ export interface CusteioComparativoView {
     uf: string;
     projecoes: CusteioProjecaoView[];
     semCusteio: CusteioSemCusteioView[];
+    incentivoProjetado: {
+        rt: number | null;
+        hdAnual: number | null;
+        fonte: string | null;
+    };
 }
 
 export interface CusteioUfView {
@@ -138,6 +144,7 @@ export class CusteioService {
         @InjectRepository(CusteioResponsavel) private readonly responsaveis: Repository<CusteioResponsavel>,
         @InjectRepository(CusteioMunicipioRef) private readonly refs: Repository<CusteioMunicipioRef>,
         @InjectRepository(CusteioProjecao) private readonly projecoes: Repository<CusteioProjecao>,
+        @InjectRepository(CusteioIncentivoProjecao) private readonly incentivos: Repository<CusteioIncentivoProjecao>,
         private readonly dataSource: DataSource,
     ) {}
 
@@ -161,13 +168,27 @@ export class CusteioService {
         }));
     }
 
+    /** Referência enxuta para cruzamentos geográficos em outros módulos do painel. */
+    async referenciasDeMacrorregiao(): Promise<Array<{ codigoIbge: number; uf: string; macrorregiao: string }>> {
+        const lista = await this.refs.find({
+            select: { codigoIbge: true, uf: true, macrorregiao: true },
+            order: { uf: "ASC", municipio: "ASC" },
+        });
+        return lista.map((m) => ({
+            codigoIbge: m.codigoIbge,
+            uf: m.uf,
+            macrorregiao: m.macrorregiao,
+        }));
+    }
+
     /** Projeção importada da UF e os municípios a mais de 50 km (ou sem rota) de um serviço que não estão em nenhum custeio. */
     async comparativo(uf: string): Promise<CusteioComparativoView> {
         if (!/^[A-Z]{2}$/.test(uf)) throw new BadRequestException("UF inválida");
-        const [proj, lista, emUso] = await Promise.all([
+        const [proj, lista, emUso, incentivo] = await Promise.all([
             this.projecoes.find({ where: { uf }, order: { ordem: "ASC" } }),
             this.refs.find({ where: { uf }, order: { municipio: "ASC" } }),
             this.nomesEmUso(uf),
+            this.incentivos.findOneBy({ uf }),
         ]);
         // "Manicoré (Matupi)" também conta como Manicoré.
         for (const n of [...emUso]) emUso.add(n.replace(/\s*\(.*$/, "").trim());
@@ -193,6 +214,11 @@ export class CusteioService {
 
         return {
             uf,
+            incentivoProjetado: {
+                rt: incentivo?.rtIncentivo ?? null,
+                hdAnual: incentivo?.hdIncentivoAnual ?? null,
+                fonte: incentivo?.fonte ?? null,
+            },
             projecoes: proj.map((p) => ({
                 macrorregiao: p.macrorregiao,
                 municipios: p.municipios,

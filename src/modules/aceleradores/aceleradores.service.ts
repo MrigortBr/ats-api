@@ -39,10 +39,10 @@ const COLS = {
     variacao: "VARIAÇÃO % APÓS LO",
     prod2024: "PROD. 2024 (freq)",
     prod2025: "PROD. 2025 (freq)",
-    prod2026JanJun: "PROD. 2026 jan–jun (freq)",
+    prod2026JanJun: "PROD. 2026 jan–ago (freq)",
     projecao2026: "PROJEÇÃO 2026 (anualiz.)",
     valor2025: "VALOR 2025 (R$)",
-    valor2026JanJun: "VALOR 2026 jan–jun (R$)",
+    valor2026JanJun: "VALOR 2026 jan–ago (R$)",
     projecaoValor2026: "PROJEÇÃO VALOR 2026 (R$)",
 } as const;
 

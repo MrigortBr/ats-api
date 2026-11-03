@@ -8,10 +8,11 @@ import { CusteioAtendido } from "./entities/custeio-atendido.entity";
 import { CusteioMunicipioRef } from "./entities/custeio-municipio-ref.entity";
 import { CusteioDistanciaCache } from "./entities/custeio-distancia-cache.entity";
 import { CusteioProjecao } from "./entities/custeio-projecao.entity";
+import { CusteioIncentivoProjecao } from "./entities/custeio-incentivo-projecao.entity";
 import { DistanciaService } from "./distancia.service";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CusteioResponsavel, CusteioAtendido, CusteioMunicipioRef, CusteioDistanciaCache, CusteioProjecao])],
+    imports: [TypeOrmModule.forFeature([CusteioResponsavel, CusteioAtendido, CusteioMunicipioRef, CusteioDistanciaCache, CusteioProjecao, CusteioIncentivoProjecao])],
     controllers: [CusteioController],
     providers: [CusteioService, DistanciaService, Reflector],
 })

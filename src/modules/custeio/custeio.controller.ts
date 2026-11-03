@@ -22,6 +22,11 @@ export class CusteioController {
     @Get("by-uf/:uf")
     findByUf(@Param("uf") uf: string) { return this.service.findByUf(uf.toUpperCase()); }
 
+    /** Referência mínima IBGE → macrorregião para agrupamentos geográficos do painel. */
+    @Get("municipios/referencia")
+    @RequiresModule("transporte", "tomo", "rnm", "combo", "empresa")
+    referenciasDeMacrorregiao() { return this.service.referenciasDeMacrorregiao(); }
+
     /** Municípios da base de referência de uma UF (sugestões do cadastro), com a marca de quem já está em algum custeio. */
     @Get("municipios")
     municipios(@Query("uf") uf: string) { return this.service.municipiosPorUf((uf ?? "").toUpperCase()); }

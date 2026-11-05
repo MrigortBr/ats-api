@@ -28,6 +28,8 @@ import { EmpresaProblem } from "../modules/empresa/entities/empresa-problem.enti
 import { Document } from "../modules/document/entities/document.entity";
 import { TomoDocument } from "../modules/tomo-document/entities/tomo-document.entity";
 import { AceleradorObservacao } from "../modules/acelerador-observacao/entities/acelerador-observacao.entity";
+import { AceleradorSincronizacao } from "../modules/aceleradores/entities/acelerador-sincronizacao.entity";
+import { AceleradorSimdashRegistro } from "../modules/aceleradores/entities/acelerador-simdash-registro.entity";
 import { ComboEquipamentoObservacao } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao.entity";
 import { ComboEquipamentoObservacaoImagem } from "../modules/combo-equipamento-observacao/entities/combo-equipamento-observacao-imagem.entity";
 import { ComboEstabelecimentoObservacao } from "../modules/combo-estabelecimento-observacao/entities/combo-estabelecimento-observacao.entity";
@@ -61,6 +63,7 @@ export const DB_ENTITIES: EntityClass[] = [
     TomoDocument,
     UfFluxoComentario,
     AceleradorObservacao,
+    AceleradorSincronizacao, AceleradorSimdashRegistro,
     ComboEquipamentoObservacao, ComboEquipamentoObservacaoImagem,
     ComboEstabelecimentoObservacao, ComboEstabelecimentoObservacaoImagem,
     ProducaoComboMensal,

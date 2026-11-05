@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ModuleGuard } from "../auth/guards/module.guard";
 import { RequiresModule } from "../auth/decorators/requires-module.decorator";
@@ -17,5 +17,10 @@ export class AceleradoresController {
     @Get()
     listar() {
         return this.service.listar();
+    }
+
+    @Post("sincronizar")
+    sincronizar() {
+        return this.service.sincronizar();
     }
 }

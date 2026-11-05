@@ -1,7 +1,11 @@
-import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger, ServiceUnavailableException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
 import ExcelJS from "exceljs";
 import { stat } from "fs/promises";
 import * as path from "path";
+import { In, Not, Repository } from "typeorm";
+import { AceleradorSincronizacao } from "./entities/acelerador-sincronizacao.entity";
+import { AceleradorSimdashRegistro } from "./entities/acelerador-simdash-registro.entity";
 
 /**
  * Le a aba "Tabelona" da planilha de aceleradores lineares.
@@ -79,7 +83,55 @@ export interface AceleradorRow {
     valor2025: number | null;
     valor2026JanJun: number | null;
     projecaoValor2026: number | null;
+    /** Dados complementares consultados em tempo real no SIMDASH, quando configurado. */
+    simdash?: SimdashAcelerador;
 }
+
+interface SimdashProducaoMensal {
+    competencia: string;
+    frequencia: number;
+    valor: number;
+}
+
+interface SimdashAcelerador {
+    cnes: string;
+    servico: string;
+    uf: string;
+    macrorregiao: string | null;
+    municipio: string;
+    naturezaJuridica: string | null;
+    gestao: string | null;
+    modosAquisicao: string[];
+    aceleradoresTotal: number;
+    aceleradoresOperacionais: number;
+    vagasSusMes: number | null;
+    vagasPorAcelerador: number | null;
+    primeiraProducao: string | null;
+    producaoMensal: SimdashProducaoMensal[];
+    producaoTotal: { frequencia: number; valor: number };
+    equipamentos: Array<{ codigoPublico: string; fabricante: string | null; modelo: string | null; numeroSerie: string | null; status: string | null; operacional: boolean; modoAquisicao: string | null; anoFabricacao: number | null; vagasMes: number | null }>;
+}
+
+interface SimdashResposta {
+    geradoEm: string;
+    fonte: "SIMDASH";
+    cobertura: { producaoDesde: string | null; producaoMensalDe: string | null; producaoMensalAte: string | null };
+    total: number;
+    dados: SimdashAcelerador[];
+}
+
+interface SimdashPersistido {
+    resposta: SimdashResposta;
+    sincronizadoEm: string;
+}
+
+export interface AceleradoresResposta {
+    rows: AceleradorRow[];
+    count: number;
+    integracao: { fonte: "SIMDASH"; geradoEm: string; sincronizadoEm: string; cobertura: SimdashResposta["cobertura"] } | null;
+}
+
+const SIMDASH_ACELERADORES_URL = "https://api-dashboard-simrad-production.up.railway.app/integracao/aceleradores-lineares";
 
 function extractValue(v: ExcelJS.CellValue): string | number | null {
     if (v === null || v === undefined) return null;
@@ -115,7 +167,31 @@ export class AceleradoresService {
     private readonly logger = new Logger(AceleradoresService.name);
     private cache: { mtimeMs: number; rows: AceleradorRow[] } | null = null;
 
-    async listar(): Promise<{ rows: AceleradorRow[]; count: number }> {
+    constructor(
+        @InjectRepository(AceleradorSincronizacao)
+        private readonly sincronizacaoRepository: Repository<AceleradorSincronizacao>,
+        @InjectRepository(AceleradorSimdashRegistro)
+        private readonly registroRepository: Repository<AceleradorSimdashRegistro>,
+    ) {}
+
+    async listar(): Promise<AceleradoresResposta> {
+        const locais = await this.lerBaseLocal();
+        const persistido = await this.buscarSimdashPersistido();
+        return this.montarResposta(locais, persistido);
+    }
+
+    async sincronizar(): Promise<AceleradoresResposta> {
+        const simdash = await this.buscarSimdash();
+        if (!simdash || simdash.dados.length === 0) {
+            throw new ServiceUnavailableException("Não foi possível obter dados válidos do SIMDASH para sincronização.");
+        }
+
+        const sincronizadoEm = await this.persistirSimdash(simdash);
+        const locais = await this.lerBaseLocal();
+        return this.montarResposta(locais, { resposta: simdash, sincronizadoEm });
+    }
+
+    private async lerBaseLocal(): Promise<AceleradorRow[]> {
         const arquivo = caminhoPlanilha();
         let mtimeMs: number;
         try {
@@ -128,7 +204,142 @@ export class AceleradoresService {
         if (!this.cache || this.cache.mtimeMs !== mtimeMs) {
             this.cache = { mtimeMs, rows: await this.lerPlanilha(arquivo) };
         }
-        return { rows: this.cache.rows, count: this.cache.rows.length };
+        return this.cache.rows;
+    }
+
+    private montarResposta(locais: AceleradorRow[], persistido: SimdashPersistido | null): AceleradoresResposta {
+        const rows = persistido ? this.integrarSimdash(locais, persistido.resposta.dados) : locais;
+        return {
+            rows,
+            count: rows.length,
+            integracao: persistido ? {
+                fonte: persistido.resposta.fonte,
+                geradoEm: persistido.resposta.geradoEm,
+                sincronizadoEm: persistido.sincronizadoEm,
+                cobertura: persistido.resposta.cobertura,
+            } : null,
+        };
+    }
+
+    private async persistirSimdash(simdash: SimdashResposta): Promise<string> {
+        const cnes = simdash.dados.map(item => item.cnes);
+        const sincronizacao = await this.sincronizacaoRepository.manager.transaction(async manager => {
+            const syncRepository = manager.getRepository(AceleradorSincronizacao);
+            const registroRepository = manager.getRepository(AceleradorSimdashRegistro);
+            const execucao = await syncRepository.save(syncRepository.create({
+                fonte: simdash.fonte,
+                geradoEmFonte: new Date(simdash.geradoEm),
+                totalRecebido: simdash.dados.length,
+                cobertura: simdash.cobertura,
+            }));
+
+            await registroRepository.delete({ cnes: Not(In(cnes)) });
+            for (const item of simdash.dados) {
+                await manager.query(
+                    `INSERT INTO "acelerador_simdash_registro" ("cnes", "dados", "sincronizacao_id")
+                     VALUES ($1, $2::jsonb, $3)
+                     ON CONFLICT ("cnes") DO UPDATE SET
+                        "dados" = EXCLUDED."dados",
+                        "sincronizacao_id" = EXCLUDED."sincronizacao_id",
+                        "updated_at" = NOW()`,
+                    [item.cnes, JSON.stringify(item), execucao.id],
+                );
+            }
+            return execucao;
+        });
+
+        this.logger.log(`SIMDASH sincronizado: ${simdash.dados.length} aceleradores persistidos.`);
+        return sincronizacao.sincronizadoEm.toISOString();
+    }
+
+    private async buscarSimdashPersistido(): Promise<SimdashPersistido | null> {
+        const [sincronizacao] = await this.sincronizacaoRepository.find({
+            order: { sincronizadoEm: "DESC" },
+            take: 1,
+        });
+        if (!sincronizacao) return null;
+
+        const registros = await this.registroRepository.find();
+        if (registros.length === 0) return null;
+
+        return {
+            sincronizadoEm: sincronizacao.sincronizadoEm.toISOString(),
+            resposta: {
+                fonte: "SIMDASH",
+                geradoEm: sincronizacao.geradoEmFonte?.toISOString() ?? sincronizacao.sincronizadoEm.toISOString(),
+                cobertura: sincronizacao.cobertura ?? { producaoDesde: null, producaoMensalDe: null, producaoMensalAte: null },
+                total: registros.length,
+                dados: registros.map(registro => registro.dados as unknown as SimdashAcelerador),
+            },
+        };
+    }
+
+    /**
+     * A senha fica exclusivamente no backend (SIMDASH_INTEGRATION_PASSWORD).
+     * Falha ou indisponibilidade não derruba a listagem: ela usa o último espelho persistido.
+     */
+    private async buscarSimdash(): Promise<SimdashResposta | null> {
+        const senha = process.env.SIMDASH_INTEGRATION_PASSWORD?.trim();
+        if (!senha) return null;
+
+        try {
+            const response = await fetch(process.env.SIMDASH_ACELERADORES_URL?.trim() || SIMDASH_ACELERADORES_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ senha }),
+                signal: AbortSignal.timeout(12_000),
+            });
+
+            if (!response.ok) {
+                this.logger.warn(`Integração SIMDASH indisponível (HTTP ${response.status}); usando planilha local.`);
+                return null;
+            }
+
+            const payload: unknown = await response.json();
+            if (!this.eRespostaSimdash(payload)) {
+                this.logger.warn("Integração SIMDASH retornou um formato inválido; usando planilha local.");
+                return null;
+            }
+            return payload;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "erro desconhecido";
+            this.logger.warn(`Falha ao consultar SIMDASH (${message}); usando planilha local.`);
+            return null;
+        }
+    }
+
+    private eRespostaSimdash(payload: unknown): payload is SimdashResposta {
+        if (!payload || typeof payload !== "object") return false;
+        const value = payload as Partial<SimdashResposta>;
+        return value.fonte === "SIMDASH" && Array.isArray(value.dados) && typeof value.geradoEm === "string";
+    }
+
+    private integrarSimdash(locais: AceleradorRow[], externos: SimdashAcelerador[]): AceleradorRow[] {
+        const porCnes = new Map(locais.map((row) => [row.cnes, row]));
+        for (const externo of externos) {
+            const local = porCnes.get(externo.cnes);
+            const modo = externo.modosAquisicao.filter(Boolean).join(", ");
+            const dadosAtualizados = {
+                acelOperacionais: String(externo.aceleradoresOperacionais),
+                vagasSusMes: externo.vagasSusMes == null ? null : String(externo.vagasSusMes),
+                vagasPorAcelerador: externo.vagasPorAcelerador == null ? null : String(externo.vagasPorAcelerador),
+                modo: modo || local?.modo || "",
+                simdash: externo,
+            };
+            if (local) {
+                porCnes.set(externo.cnes, { ...local, ...dadosAtualizados });
+                continue;
+            }
+            porCnes.set(externo.cnes, {
+                cnes: externo.cnes, servico: externo.servico, uf: externo.uf, macro: externo.macrorregiao ?? "",
+                naturezaJuridica: externo.naturezaJuridica, gestao: externo.gestao, municipio: externo.municipio,
+                novosCasosCancer: null, ...dadosAtualizados,
+                mesAnoLo: null, obs: null, tempoPosLo: null, primeiraProducao: externo.primeiraProducao,
+                prodAntes: null, prodDepois: null, variacaoPct: null, prod2024: null, prod2025: null,
+                prod2026JanJun: null, projecao2026: null, valor2025: null, valor2026JanJun: null, projecaoValor2026: null,
+            });
+        }
+        return [...porCnes.values()];
     }
 
     private async lerPlanilha(arquivo: string): Promise<AceleradorRow[]> {

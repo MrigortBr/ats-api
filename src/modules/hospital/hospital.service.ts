@@ -73,7 +73,7 @@ export class HospitalService {
 
     // ── DEMAS API ──────────────────────────────────────────────────────────────
 
-    async fetchCnes(cnes: string): Promise<{ name: string; municipality: string; ufSigla: string; cnes: string }> {
+    async fetchCnes(cnes: string): Promise<{ name: string; municipality: string; ufSigla: string; ibgeCode: string; cnes: string }> {
         // CNES é sempre 7 dígitos com zero-padding (ex: 655 → 0000655)
         const cleanCnes = cnes.trim().replace(/\D/g, "").padStart(7, "0");
         if (!cleanCnes || cleanCnes.length !== 7) {
@@ -139,6 +139,7 @@ export class HospitalService {
             name:         toTitleCase(rawName),
             municipality: toTitleCase(mun.nome),
             ufSigla,
+            ibgeCode:     String(mun.id),
         };
     }
 

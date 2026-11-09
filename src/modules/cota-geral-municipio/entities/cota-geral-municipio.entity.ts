@@ -28,4 +28,13 @@ export class CotaGeralMunicipio {
 
     @Column({ type: "integer", default: 0 })
     van!: number;
+
+    @Column({ name: "entregue_ambulancia", type: "integer", default: 0 })
+    entregueAmbulancia!: number;
+
+    @Column({ name: "entregue_microonibus", type: "integer", default: 0 })
+    entregueMicroonibus!: number;
+
+    @Column({ name: "entregue_van", type: "integer", default: 0 })
+    entregueVan!: number;
 }

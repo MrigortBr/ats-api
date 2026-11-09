@@ -75,6 +75,7 @@ export class CotaGeralService {
             id: number; ibge: string; uf: string; nomeMunicipio: string;
             enteBeneficiario: string; finalidade: string;
             ambulancia: number; microonibus: number; van: number;
+            entregueAmbulancia: number; entregueMicroonibus: number; entregueVan: number;
         };
 
         const [totals, deliveredGeneralQuota, municipios] = await Promise.all([
@@ -90,7 +91,10 @@ export class CotaGeralService {
                 `SELECT id, ibge, uf,
                         nome_municipio    AS "nomeMunicipio",
                         ente_beneficiario AS "enteBeneficiario",
-                        finalidade, ambulancia, microonibus, van
+                        finalidade, ambulancia, microonibus, van,
+                        entregue_ambulancia  AS "entregueAmbulancia",
+                        entregue_microonibus AS "entregueMicroonibus",
+                        entregue_van         AS "entregueVan"
                  FROM cota_geral_municipio
                  WHERE uf = $1
                  ORDER BY nome_municipio ASC`,

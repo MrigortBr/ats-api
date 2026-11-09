@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
-    ArrayMaxSize, ArrayMinSize, IsArray, IsInt, Length, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min, ValidateNested,
+    ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsInt, Length, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min, ValidateNested,
 } from "class-validator";
 
 export class UpdateCusteioAtendidoDto {
@@ -135,6 +135,10 @@ export class SyncCusteioResponsavelDto {
     @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1)
     id?: number;
 
+    /** Posição global na planilha; mantém a ordem quando a sincronização é enviada em lotes. */
+    @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0)
+    ordem?: number;
+
     @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(120)
     municipio!: string;
 
@@ -186,7 +190,22 @@ export class CalcularDistanciasDto {
 export class SyncCusteioUfDto {
     /** Estado final da UF: o que não estiver aqui é removido. */
     @ApiProperty({ type: [SyncCusteioResponsavelDto] })
-    @IsArray() @ArrayMaxSize(300)
+    /**
+     * A planilha pode conter todos os municípios de uma UF. O processamento
+     * ocorre na mesma transação, portanto o limite anterior de 300 impedia o
+     * envio de estados com mais rotas sem trazer ganho de segurança.
+     */
+    @IsArray() @ArrayMaxSize(2000)
     @ValidateNested({ each: true }) @Type(() => SyncCusteioResponsavelDto)
     responsaveis!: SyncCusteioResponsavelDto[];
+
+    /** Lote intermediário: persiste inclusões e alterações, mas não remove registros ausentes. */
+    @ApiPropertyOptional()
+    @IsOptional() @IsBoolean()
+    preservarAusentes?: boolean;
+
+    /** Usado na chamada final de uma sincronização em lotes para remover apenas o que ficou fora do conjunto completo. */
+    @ApiPropertyOptional({ type: [Number] })
+    @IsOptional() @IsArray() @ArrayMaxSize(2000) @IsInt({ each: true }) @Min(1, { each: true })
+    idsParaManter?: number[];
 }

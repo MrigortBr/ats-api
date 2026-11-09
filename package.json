@@ -15,6 +15,7 @@
         "migration:run": "npx typeorm-ts-node-commonjs migration:run -d src/database/data-source.cli.ts",
         "seed:run": "npx ts-node -r tsconfig-paths/register src/database/seed/index.ts",
         "seed:cota-geral-municipio": "npx ts-node -r tsconfig-paths/register src/database/seed/cota-geral-municipio.seed.ts",
+        "seed:pacnorama-entregas": "npx ts-node -r tsconfig-paths/register src/database/seed/pacnorama-entregas.seed.ts",
         "seed:cib-municipio": "npx ts-node -r tsconfig-paths/register src/database/seed/cib-municipio.seed.ts",
         "seed:producao-combo-0405": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-combo-0405.seed.ts",
         "seed:producao-tomo-rnm": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-rnm.seed.ts",

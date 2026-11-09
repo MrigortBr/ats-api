@@ -357,6 +357,8 @@ export class CusteioService {
 
         const ids = dto.responsaveis.map((r) => r.id).filter((i): i is number => i !== undefined);
         if (new Set(ids).size !== ids.length) throw new BadRequestException("Responsável repetido");
+        const idsParaManter = dto.idsParaManter ?? ids;
+        if (new Set(idsParaManter).size !== idsParaManter.length) throw new BadRequestException("Responsável repetido na finalização");
 
         await this.dataSource.transaction(async (manager) => {
             const respRepo = manager.getRepository(CusteioResponsavel);
@@ -364,6 +366,7 @@ export class CusteioService {
             const existentes = await respRepo.find({ where: { uf }, relations: { atendidos: true } });
             const porId = new Map(existentes.map((r) => [r.id, r]));
             if (ids.some((i) => !porId.has(i))) throw new BadRequestException("Responsável não pertence à UF informada");
+            if (idsParaManter.some((i) => !porId.has(i))) throw new BadRequestException("Responsável da finalização não pertence à UF informada");
 
             // Município novo (da base) repetido em outro custeio só é aceito quando há divisão de custo.
             const contagem = new Map<string, number>();
@@ -374,9 +377,11 @@ export class CusteioService {
                 }
             }
 
-            const manter = new Set(ids);
-            const remover = existentes.filter((r) => !manter.has(r.id));
-            if (remover.length) await respRepo.softRemove(remover);
+            if (!dto.preservarAusentes) {
+                const manter = new Set(idsParaManter);
+                const remover = existentes.filter((r) => !manter.has(r.id));
+                if (remover.length) await respRepo.softRemove(remover);
+            }
 
             for (let i = 0; i < dto.responsaveis.length; i++) {
                 const r = dto.responsaveis[i];
@@ -415,7 +420,7 @@ export class CusteioService {
 
                 let resp: CusteioResponsavel;
                 if (atual) {
-                    atual.ordem = i;
+                    atual.ordem = r.ordem ?? i;
                     atual.macrorregiao = macrorregiao || atual.macrorregiao;
                     atual.municipio = r.municipio.trim();
                     atual.tipoVeiculo = texto(r.tipoVeiculo);
@@ -428,7 +433,7 @@ export class CusteioService {
                 } else {
                     resp = await respRepo.save(
                         respRepo.create({
-                            uf, ordem: i, macrorregiao, municipio: r.municipio.trim(),
+                            uf, ordem: r.ordem ?? i, macrorregiao, municipio: r.municipio.trim(),
                             gestorHd: null, tipoVeiculo: texto(r.tipoVeiculo), tipoVeiculoHd: null, nVeiculos: null,
                             refRt: texto(r.refRt), refHd: texto(r.refHd), divisaoN: null, divisaoIndice: null,
                         }),

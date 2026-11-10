@@ -20,6 +20,7 @@
         "seed:producao-combo-0405": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-combo-0405.seed.ts",
         "seed:producao-tomo-rnm": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-rnm.seed.ts",
         "seed:combo-atualizacao": "npx ts-node -r tsconfig-paths/register src/database/seed/combo-atualizacao-planilha.seed.ts",
+        "seed:tomo-rnm-atualizacao": "npx ts-node -r tsconfig-paths/register src/database/seed/tomo-rnm-atualizacao-planilha.seed.ts",
         "seed:producao-tomo-correcao-6": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-correcao-6-cnes.seed.ts",
         "seed:producao-corrigir-sem-entrega": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-corrigir-sem-entrega.seed.ts",
         "seed:usuarios-transporte-equipamentos": "npx ts-node -r tsconfig-paths/register src/database/seed/usuarios-transporte-equipamentos.seed.ts",
@@ -60,7 +61,8 @@
         "rxjs": "^7.8.1",
         "swagger-ui-express": "^5.0.1",
         "typeorm": "^0.3.31",
-        "uuid": "^14.0.0"
+        "uuid": "^14.0.0",
+        "xlsx": "^0.18.5"
     },
     "devDependencies": {
         "@nestjs/cli": "^11.0.0",

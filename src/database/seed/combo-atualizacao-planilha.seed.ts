@@ -9,8 +9,9 @@ import * as path from "path";
  * "Controle_por_equipamento" da planilha de acompanhamento.
  *
  * A atualização usa `equip_key` (coluna "Chave") e, portanto, não cria
- * equipamentos novos nem depende de pareamento por nome/serial. Registros
- * bloqueados manualmente (`locked_by`) são preservados.
+ * equipamentos novos nem depende de pareamento por nome/serial. Para os
+ * registros não bloqueados, a planilha é a fonte de verdade dos campos
+ * operacionais. Registros bloqueados manualmente (`locked_by`) são preservados.
  *
  * Uso:
  *   npm run seed:combo-atualizacao -- "C:\\caminho\\planilha.xlsx" --dry
@@ -59,40 +60,50 @@ interface PlanilhaLinha {
     paymentStatus?: string;
 }
 
-const C = {
-    equipKey: 1,
-    comboCode: 2,
-    contract: 14,
-    deliveryParcel: 15,
-    serialNumber: 17,
-    expeditionDate: 18,
-    deliveryForecast: 19,
-    deliveryDate: 20,
-    installationDate: 21,
-    trainingDate: 22,
-    deliveryStatus: 23,
-    equipmentCount: 24,
-    nfSent: 25,
-    nfNumber: 26,
-    nfSentDate: 27,
-    provisionalReceiptSent: 28,
-    finalReceiptSent: 29,
-    nfValue: 30,
-    payment1Value: 31,
-    payment1Nup: 32,
-    payment1SentDate: 33,
-    payment2Value: 34,
-    payment2Nup: 35,
-    payment2SentDate: 36,
-    payment2Deadline: 37,
-    totalPaid: 38,
-    paymentStatus: 39,
+const H = {
+    equipKey: "Chave",
+    comboCode: "Combo",
+    contract: "Contrato",
+    deliveryParcel: "Parcela de Entrega",
+    serialNumber: "Nº de Série do Equipamento",
+    expeditionDate: "Data de Expedição",
+    deliveryForecast: "Previsão de Entrega ao Destinatário",
+    deliveryDate: "Data de Entrega Concretizada ao Destinatário",
+    installationDate: "Data de Instalação",
+    trainingDate: "Data de Capacitação",
+    deliveryStatus: "Situação de Entrega",
+    equipmentCount: "Quantidade de Equipamentos",
+    nfSent: "Enviada Nota Fiscal",
+    nfNumber: "Nº NF",
+    nfSentDate: "Data de Envio da NF",
+    provisionalReceiptSent: "Enviado Termo de Recebimento Provisório",
+    finalReceiptSent: "Enviado Termo de Recebimento Definitivo",
+    nfValue: "Valor da NF",
+    payment1Value: "Valor 1º Pagamento",
+    payment1Nup: "NUP 1º Pagamento",
+    payment1SentDate: "Data de Envio para Pagamento da 1ª Parcela",
+    payment2Value: "Valor 2º Pagamento",
+    payment2Nup: "NUP 2º Pagamento",
+    payment2SentDate: "Data de Envio para Pagamento da 2ª Parcela",
+    payment2Deadline: "Data Final para Pagamento da 2ª Parcela",
+    totalPaid: "Valor Total Pago",
+    paymentStatus: "Status Pagamento",
 } as const;
 
 function cellValue(cell: ExcelJS.Cell): Scalar {
     const value = cell.value as unknown;
-    if (value && typeof value === "object" && "result" in value) {
-        return (value as { result?: Scalar }).result;
+    if (value instanceof Date) return value;
+    if (value && typeof value === "object") {
+        if ("result" in value) return (value as { result?: Scalar }).result;
+        if ("richText" in value) {
+            return (value as { richText?: Array<{ text?: string }> }).richText
+                ?.map(part => part.text ?? "")
+                .join("") || undefined;
+        }
+        if ("text" in value && typeof (value as { text?: unknown }).text === "string") {
+            return (value as { text: string }).text;
+        }
+        return undefined;
     }
     return value as Scalar;
 }
@@ -100,9 +111,9 @@ function cellValue(cell: ExcelJS.Cell): Scalar {
 function text(value: Scalar): string | undefined {
     if (value == null || value === "") return undefined;
     if (value instanceof Date) {
-        const day = String(value.getDate()).padStart(2, "0");
-        const month = String(value.getMonth() + 1).padStart(2, "0");
-        return `${day}/${month}/${value.getFullYear()}`;
+        const day = String(value.getUTCDate()).padStart(2, "0");
+        const month = String(value.getUTCMonth() + 1).padStart(2, "0");
+        return `${day}/${month}/${value.getUTCFullYear()}`;
     }
     return String(value).trim() || undefined;
 }
@@ -130,39 +141,65 @@ function boolean(value: Scalar): boolean | undefined {
     return undefined;
 }
 
-function linha(row: ExcelJS.Row): PlanilhaLinha | null {
-    const get = (column: number) => cellValue(row.getCell(column));
-    const equipKey = text(get(C.equipKey));
+function normalizarCabecalho(value: string): string {
+    return value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLocaleLowerCase("pt-BR");
+}
+
+function colunasDaPlanilha(worksheet: ExcelJS.Worksheet): Record<keyof typeof H, number> {
+    const header = worksheet.getRow(1);
+    const indices = new Map<string, number>();
+    header.eachCell({ includeEmpty: false }, (cell, column) => {
+        const value = text(cellValue(cell));
+        if (value) indices.set(normalizarCabecalho(value), column);
+    });
+
+    const result = {} as Record<keyof typeof H, number>;
+    for (const [field, name] of Object.entries(H) as [keyof typeof H, string][]) {
+        const column = indices.get(normalizarCabecalho(name));
+        if (!column) throw new Error(`Coluna obrigatória não encontrada: "${name}".`);
+        result[field] = column;
+    }
+    return result;
+}
+
+function linha(row: ExcelJS.Row, columns: Record<keyof typeof H, number>): PlanilhaLinha | null {
+    const get = (field: keyof typeof H) => cellValue(row.getCell(columns[field]));
+    const equipKey = text(get("equipKey"));
     if (!equipKey) return null;
 
     return {
         equipKey,
-        comboCode: text(get(C.comboCode)),
-        contract: text(get(C.contract)),
-        deliveryParcel: text(get(C.deliveryParcel)),
-        serialNumber: text(get(C.serialNumber)),
-        expeditionDate: text(get(C.expeditionDate)),
-        deliveryForecast: text(get(C.deliveryForecast)),
-        deliveryDate: text(get(C.deliveryDate)),
-        installationDate: text(get(C.installationDate)),
-        trainingDate: text(get(C.trainingDate)),
-        deliveryStatus: text(get(C.deliveryStatus)),
-        equipmentCount: number(get(C.equipmentCount)),
-        nfSent: boolean(get(C.nfSent)),
-        nfNumber: text(get(C.nfNumber)),
-        nfSentDate: text(get(C.nfSentDate)),
-        provisionalReceiptSent: boolean(get(C.provisionalReceiptSent)),
-        finalReceiptSent: boolean(get(C.finalReceiptSent)),
-        nfValue: number(get(C.nfValue)),
-        payment1Value: number(get(C.payment1Value)),
-        payment1Nup: text(get(C.payment1Nup)),
-        payment1SentDate: text(get(C.payment1SentDate)),
-        payment2Value: number(get(C.payment2Value)),
-        payment2Nup: text(get(C.payment2Nup)),
-        payment2SentDate: text(get(C.payment2SentDate)),
-        payment2Deadline: text(get(C.payment2Deadline)),
-        totalPaid: number(get(C.totalPaid)),
-        paymentStatus: text(get(C.paymentStatus)),
+        comboCode: text(get("comboCode")),
+        contract: text(get("contract")),
+        deliveryParcel: text(get("deliveryParcel")),
+        serialNumber: text(get("serialNumber")),
+        expeditionDate: text(get("expeditionDate")),
+        deliveryForecast: text(get("deliveryForecast")),
+        deliveryDate: text(get("deliveryDate")),
+        installationDate: text(get("installationDate")),
+        trainingDate: text(get("trainingDate")),
+        deliveryStatus: text(get("deliveryStatus")),
+        equipmentCount: number(get("equipmentCount")),
+        nfSent: boolean(get("nfSent")),
+        nfNumber: text(get("nfNumber")),
+        nfSentDate: text(get("nfSentDate")),
+        provisionalReceiptSent: boolean(get("provisionalReceiptSent")),
+        finalReceiptSent: boolean(get("finalReceiptSent")),
+        nfValue: number(get("nfValue")),
+        payment1Value: number(get("payment1Value")),
+        payment1Nup: text(get("payment1Nup")),
+        payment1SentDate: text(get("payment1SentDate")),
+        payment2Value: number(get("payment2Value")),
+        payment2Nup: text(get("payment2Nup")),
+        payment2SentDate: text(get("payment2SentDate")),
+        payment2Deadline: text(get("payment2Deadline")),
+        totalPaid: number(get("totalPaid")),
+        paymentStatus: text(get("paymentStatus")),
     };
 }
 
@@ -193,10 +230,11 @@ async function main(): Promise<void> {
     const worksheet = workbook.getWorksheet("Controle_por_equipamento");
     if (!worksheet) throw new Error('Aba "Controle_por_equipamento" não encontrada.');
 
+    const columns = colunasDaPlanilha(worksheet);
     const linhas: PlanilhaLinha[] = [];
     worksheet.eachRow({ includeEmpty: false }, (row, index) => {
         if (index < 2) return;
-        const item = linha(row);
+        const item = linha(row, columns);
         if (item) linhas.push(item);
     });
     if (!linhas.length) throw new Error("Nenhum equipamento válido foi encontrado na planilha.");
@@ -209,66 +247,80 @@ async function main(): Promise<void> {
     let atualizados = 0;
     let bloqueados = 0;
     const ausentes: string[] = [];
+    const equipamentosNoBanco: Array<{ id: string; equip_key: string; locked_by: string | null }> = await ds.query(
+        `SELECT id, equip_key, locked_by
+         FROM combo_consult
+         WHERE equip_key = ANY($1) AND deleted_at IS NULL`,
+        [linhas.map(item => item.equipKey)],
+    );
+    const porChave = new Map(equipamentosNoBanco.map(item => [item.equip_key, item]));
+    const pendentes: Array<{ id: string; item: PlanilhaLinha }> = [];
 
     for (const item of linhas) {
-        const existing = await ds.query(
-            `SELECT id, locked_by FROM combo_consult WHERE equip_key = $1 AND deleted_at IS NULL`,
-            [item.equipKey],
-        );
-        if (!existing.length) {
+        const existing = porChave.get(item.equipKey);
+        if (!existing) {
             ausentes.push(item.equipKey);
             continue;
         }
-        if (existing[0].locked_by) {
+        if (existing.locked_by) {
             bloqueados++;
             continue;
         }
+        pendentes.push({ id: existing.id, item });
+    }
 
-        if (!dry) {
-            await ds.query(
-                `UPDATE combo_consult SET
-                    combo_code = COALESCE($2, combo_code),
-                    contract = COALESCE($3, contract),
-                    delivery_parcel = COALESCE($4, delivery_parcel),
-                    serial_number = COALESCE($5, serial_number),
-                    expedition_date = COALESCE($6, expedition_date),
-                    delivery_forecast = COALESCE($7, delivery_forecast),
-                    delivery_date = COALESCE($8, delivery_date),
-                    installation_date = COALESCE($9, installation_date),
-                    training_date = COALESCE($10, training_date),
-                    delivery_status = COALESCE($11, delivery_status),
-                    equipment_count = COALESCE($12, equipment_count),
-                    nf_sent = COALESCE($13, nf_sent),
-                    nf_number = COALESCE($14, nf_number),
-                    nf_sent_date = COALESCE($15, nf_sent_date),
-                    provisional_receipt_sent = COALESCE($16, provisional_receipt_sent),
-                    final_receipt_sent = COALESCE($17, final_receipt_sent),
-                    nf_value = COALESCE($18, nf_value),
-                    payment1_value = COALESCE($19, payment1_value),
-                    payment1_nup = COALESCE($20, payment1_nup),
-                    payment1_sent_date = COALESCE($21, payment1_sent_date),
-                    payment2_value = COALESCE($22, payment2_value),
-                    payment2_nup = COALESCE($23, payment2_nup),
-                    payment2_sent_date = COALESCE($24, payment2_sent_date),
-                    payment2_deadline = COALESCE($25, payment2_deadline),
-                    total_paid = COALESCE($26, total_paid),
-                    payment_status = COALESCE($27, payment_status),
-                    updated_at = NOW()
-                 WHERE id = $1`,
-                [
-                    existing[0].id,
-                    item.comboCode, item.contract, item.deliveryParcel, item.serialNumber,
-                    item.expeditionDate, item.deliveryForecast, item.deliveryDate,
-                    item.installationDate, item.trainingDate, item.deliveryStatus,
-                    item.equipmentCount, item.nfSent, item.nfNumber, item.nfSentDate,
-                    item.provisionalReceiptSent, item.finalReceiptSent, item.nfValue,
-                    item.payment1Value, item.payment1Nup, item.payment1SentDate,
-                    item.payment2Value, item.payment2Nup, item.payment2SentDate,
-                    item.payment2Deadline, item.totalPaid, item.paymentStatus,
-                ],
-            );
+    if (!dry) {
+        const tamanhoDoLote = 25;
+        for (let inicio = 0; inicio < pendentes.length; inicio += tamanhoDoLote) {
+            const lote = pendentes.slice(inicio, inicio + tamanhoDoLote);
+            await Promise.all(lote.map(({ id, item }) =>
+                ds.query(
+                    `UPDATE combo_consult SET
+                        combo_code = $2,
+                        contract = $3,
+                        delivery_parcel = $4,
+                        serial_number = $5,
+                        expedition_date = $6,
+                        delivery_forecast = $7,
+                        delivery_date = $8,
+                        installation_date = $9,
+                        training_date = $10,
+                        delivery_status = $11,
+                        equipment_count = $12,
+                        nf_sent = $13,
+                        nf_number = $14,
+                        nf_sent_date = $15,
+                        provisional_receipt_sent = $16,
+                        final_receipt_sent = $17,
+                        nf_value = $18,
+                        payment1_value = $19,
+                        payment1_nup = $20,
+                        payment1_sent_date = $21,
+                        payment2_value = $22,
+                        payment2_nup = $23,
+                        payment2_sent_date = $24,
+                        payment2_deadline = $25,
+                        total_paid = $26,
+                        payment_status = $27,
+                        updated_at = NOW()
+                     WHERE id = $1`,
+                    [
+                        id,
+                        item.comboCode, item.contract, item.deliveryParcel, item.serialNumber,
+                        item.expeditionDate, item.deliveryForecast, item.deliveryDate,
+                        item.installationDate, item.trainingDate, item.deliveryStatus,
+                        item.equipmentCount, item.nfSent, item.nfNumber, item.nfSentDate,
+                        item.provisionalReceiptSent, item.finalReceiptSent, item.nfValue,
+                        item.payment1Value, item.payment1Nup, item.payment1SentDate,
+                        item.payment2Value, item.payment2Nup, item.payment2SentDate,
+                        item.payment2Deadline, item.totalPaid, item.paymentStatus,
+                    ],
+                ),
+            ));
+            atualizados += lote.length;
         }
-        atualizados++;
+    } else {
+        atualizados = pendentes.length;
     }
 
     console.log(`\n${dry ? "Seriam atualizados" : "Atualizados"}: ${atualizados}`);

@@ -61,6 +61,7 @@ src/database/seed/
 !src/database/seed/
 src/database/seed/*
 !src/database/seed/combo-atualizacao-planilha.seed.ts
+!src/database/seed/tomo-rnm-atualizacao-planilha.seed.ts
 
 # context handoff (não versionar)
 CONTEXT.md

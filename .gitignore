@@ -57,6 +57,10 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Seeds (dados sensíveis — não versionar)
 src/database/seed/
+# O sincronizador é código genérico: não carrega dados nem credenciais no repositório.
+!src/database/seed/
+src/database/seed/*
+!src/database/seed/combo-atualizacao-planilha.seed.ts
 
 # context handoff (não versionar)
 CONTEXT.md

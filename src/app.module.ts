@@ -20,6 +20,7 @@ import { EntregaModule } from "./modules/entrega/entrega.module";
 import { CotaGeralModule } from "./modules/cota-geral/cota-geral.module";
 import { ConsolidadoModule } from "./modules/consolidado/consolidado.module";
 import { HospitalModule } from "./modules/hospital/hospital.module";
+import { ComboImportModule } from "./modules/combo-import/combo-import.module";
 import { CibModule } from "./modules/cib/cib.module";
 import { RnmDocumentModule } from "./modules/rnm-document/rnm-document.module";
 import { CusteioModule } from "./modules/custeio/custeio.module";
@@ -66,6 +67,7 @@ import { AceleradoresModule } from "./modules/aceleradores/aceleradores.module";
         ConsolidadoModule,
         // TOMO/RNM
         HospitalModule,
+        ComboImportModule,
         // CIB
         CibModule,
         // RNM Documents

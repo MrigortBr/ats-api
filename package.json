@@ -18,6 +18,8 @@
         "seed:pacnorama-entregas": "npx ts-node -r tsconfig-paths/register src/database/seed/pacnorama-entregas.seed.ts",
         "seed:cib-municipio": "npx ts-node -r tsconfig-paths/register src/database/seed/cib-municipio.seed.ts",
         "seed:producao-combo-0405": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-combo-0405.seed.ts",
+        "seed:producao-tomo-rnm-carga": "node src/database/seed/carga-producao-tomo-rnm.js carga-producao-tomo-rnm.sql && node src/database/seed/carga-producao-tomo-rnm.js carga-producao-tomo-sinalizada.sql && node src/database/seed/carga-producao-tomo-rnm.js carga-producao-tomo-2026.sql && node src/database/seed/carga-producao-tomo-rnm.js carga-producao-rnm-2026.sql && node src/database/seed/carga-producao-tomo-rnm.js carga-producao-tomo-sinalizada-v2.sql",
+    "seed:producao-tomo-rnm-mensal": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-rnm-mensal.seed.ts",
         "seed:producao-tomo-rnm": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-rnm.seed.ts",
         "seed:combo-atualizacao": "npx ts-node -r tsconfig-paths/register src/database/seed/combo-atualizacao-planilha.seed.ts",
         "seed:tomo-rnm-atualizacao": "npx ts-node -r tsconfig-paths/register src/database/seed/tomo-rnm-atualizacao-planilha.seed.ts",

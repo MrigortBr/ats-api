@@ -106,6 +106,16 @@ function statusTomo(value: unknown): string | undefined {
     return original?.toUpperCase();
 }
 
+/** Número de série do Excel -> dd/mm/aaaa (UTC, sem depender de fuso nem do formato da célula). */
+function dataDeSerial(serial: number): string | undefined {
+    if (!Number.isFinite(serial) || serial < 20_000 || serial > 80_000) return undefined;
+    const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86_400_000);
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getUTCFullYear()}`;
+}
+
+/** Texto digitado na célula: dd/mm/aa vira dd/mm/aaaa; o resto passa sem mudar. */
 function data(value: unknown): string | undefined {
     const raw = texto(value);
     if (!raw) return undefined;
@@ -115,19 +125,78 @@ function data(value: unknown): string | undefined {
     return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/20${year}`;
 }
 
-function arquivoEntrada(): string {
-    const arg = process.argv.slice(2).find(value => value !== "--dry");
-    if (arg) return path.resolve(arg);
+/**
+ * Data de entrega: se a célula é uma data do Excel, usa o número de série (sem ambiguidade de formato);
+ * se é texto, usa o texto. O texto formatado pelo XLSX sai como m/d/aa e não serve para isso.
+ */
+function dataDaCelula(sheet: XLSX.WorkSheet, linha: number, coluna: number, formatado: unknown): string | undefined {
+    const cell = sheet[XLSX.utils.encode_cell({ r: linha, c: coluna })] as XLSX.CellObject | undefined;
+    if (cell && cell.t === "n" && typeof cell.v === "number") {
+        const d = dataDeSerial(cell.v);
+        if (d) return d;
+    }
+    return data(formatado);
+}
 
-    const downloads = path.join(process.env.USERPROFILE ?? "", "Downloads");
-    const candidates = fs.existsSync(downloads)
-        ? fs.readdirSync(downloads)
-            .filter(name => /^Controle Tomografia e Ressonância.*\.xlsx$/i.test(name))
-            .map(name => ({ name, modified: fs.statSync(path.join(downloads, name)).mtimeMs }))
-            .sort((a, b) => b.modified - a.modified)
-        : [];
-    if (!candidates[0]) throw new Error("Informe o caminho da planilha .xlsx como primeiro argumento.");
-    return path.join(downloads, candidates[0].name);
+const PASTAS_IGNORADAS = new Set(["node_modules", ".git", ".next", "dist", "build", "AppData"]);
+
+function nomeCompativel(nome: string): boolean {
+    if (nome.startsWith("~$") || !/\.xlsx?m?$/i.test(nome)) return false;
+    const n = normalizar(nome);
+    return (n.includes("tomograf") && n.includes("ressonan")) || n.startsWith("controle tomografia");
+}
+
+function varrer(pasta: string, profundidade: number, achados: Map<string, number>): void {
+    let itens: fs.Dirent[];
+    try { itens = fs.readdirSync(pasta, { withFileTypes: true }); } catch { return; }
+    for (const item of itens) {
+        const caminho = path.join(pasta, item.name);
+        if (item.isDirectory()) {
+            if (profundidade > 0 && !PASTAS_IGNORADAS.has(item.name)) varrer(caminho, profundidade - 1, achados);
+        } else if (nomeCompativel(item.name)) {
+            try { achados.set(caminho, fs.statSync(caminho).mtimeMs); } catch { /* ignora */ }
+        }
+    }
+}
+
+function temAsAbas(arquivo: string): boolean {
+    try {
+        const nomes = XLSX.readFile(arquivo, { bookSheets: true }).SheetNames;
+        return nomes.includes("Seleção_Tomográfos") && nomes.includes("Seleção_Ressonância");
+    } catch { return false; }
+}
+
+/** Procura a planilha em Downloads, Desktop, Documents, OneDrive e na pasta do projeto; usa a mais recente com as duas abas. */
+function localizarPlanilha(): string {
+    const home = process.env.USERPROFILE ?? process.env.HOME ?? "";
+    const raizes = new Set<string>([process.cwd(), path.resolve(process.cwd(), "..")]);
+    for (const pasta of ["Downloads", "Desktop", "Documents"]) raizes.add(path.join(home, pasta));
+    try {
+        for (const nome of fs.readdirSync(home)) {
+            if (!/^OneDrive/i.test(nome)) continue;
+            raizes.add(path.join(home, nome));
+            for (const pasta of ["Desktop", "Documents", "Downloads", "Área de Trabalho", "Documentos"]) raizes.add(path.join(home, nome, pasta));
+        }
+    } catch { /* sem home legível */ }
+
+    const achados = new Map<string, number>();
+    for (const raiz of raizes) varrer(raiz, 2, achados);
+    const ordenados = [...achados.entries()].sort((a, b) => b[1] - a[1]).map(([caminho]) => caminho);
+    const valido = ordenados.find(temAsAbas);
+    if (!valido) {
+        throw new Error(
+            "Não achei a planilha (nome com 'Tomografia' e 'Ressonância', abas Seleção_Tomográfos e Seleção_Ressonância).\n" +
+            `Procurei em: ${[...raizes].join("; ")}\nPasse o caminho: npm run seed:tomo-rnm-atualizacao -- "C:\\pasta\\arquivo.xlsx"`,
+        );
+    }
+    if (ordenados.length > 1) console.log(`Planilhas encontradas (usando a mais recente com as abas certas):\n  ${ordenados.slice(0, 5).join("\n  ")}`);
+    return valido;
+}
+
+function arquivoInformado(): string | undefined {
+    // Junta os pedaços caso o shell tenha separado o caminho por causa dos espaços.
+    const bruto = process.argv.slice(2).filter(arg => !arg.startsWith("--")).join(" ").trim().replace(/^["']|["']$/g, "");
+    return bruto ? path.resolve(bruto) : undefined;
 }
 
 function lerAba(workbook: XLSX.WorkBook, aba: string, campos: CampoSource, modulo: Modulo): LinhaPlanilha[] {
@@ -160,7 +229,8 @@ function lerAba(workbook: XLSX.WorkBook, aba: string, campos: CampoSource, modul
         deliveryDate: col(campos.deliveryDate),
     };
 
-    return rows.slice(2).flatMap(row => {
+    const faixa = XLSX.utils.decode_range(sheet["!ref"] ?? "A1");
+    return rows.slice(2).flatMap((row, i) => {
         const codigo = cnes(row[indices.cnes]);
         if (!codigo) return [];
         return [{
@@ -172,15 +242,17 @@ function lerAba(workbook: XLSX.WorkBook, aba: string, campos: CampoSource, modul
                 ? statusTomo(row[indices.status])
                 : texto(row[indices.status]),
             contract: indices.contract === undefined ? undefined : texto(row[indices.contract]),
-            deliveryDate: indices.deliveryDate === undefined ? undefined : data(row[indices.deliveryDate]),
+            deliveryDate: indices.deliveryDate === undefined
+                ? undefined
+                : dataDaCelula(sheet, faixa.s.r + 2 + i, faixa.s.c + indices.deliveryDate, row[indices.deliveryDate]),
         }];
     });
 }
 
 async function atualizar(modulo: Modulo, linhas: LinhaPlanilha[], dry: boolean): Promise<void> {
     const table = modulo === "tomo" ? "hospital_tomo" : "hospital_rnm";
-    const registros: Array<{ id: number; cnes: string }> = await ds.query(
-        `SELECT x.id, h.cnes
+    const registros: Array<{ id: number; cnes: string; deliveryDate: string | null }> = await ds.query(
+        `SELECT x.id, h.cnes, x.delivery_date AS "deliveryDate"
          FROM ${table} x
          INNER JOIN hospital h ON h.id = x.hospital_id
          WHERE x.deleted_at IS NULL AND h.deleted_at IS NULL AND h.cnes = ANY($1)`,
@@ -216,18 +288,24 @@ async function atualizar(modulo: Modulo, linhas: LinhaPlanilha[], dry: boolean):
         }
     }
 
+    const mudancasData = pendentes.filter(item => item.deliveryDate && item.deliveryDate !== porCnes.get(item.cnes)!.deliveryDate);
     console.log(`\n${modulo.toUpperCase()}`);
     console.log(`${dry ? "Seriam atualizados" : "Atualizados"}: ${pendentes.length}`);
+    console.log(`Datas de entrega que mudam: ${mudancasData.length}`);
+    for (const item of mudancasData.slice(0, 80)) {
+        console.log(`  ${item.cnes}: ${porCnes.get(item.cnes)!.deliveryDate ?? "(vazio)"} -> ${item.deliveryDate}`);
+    }
     console.log(`CNES da planilha sem registro ${modulo.toUpperCase()} no banco: ${ausentes.length}`);
     if (ausentes.length) console.log(ausentes.map(item => item.cnes).join(", "));
 }
 
 async function main(): Promise<void> {
     const dry = process.argv.includes("--dry");
-    const arquivo = arquivoEntrada();
-    if (!fs.existsSync(arquivo)) throw new Error(`Arquivo não encontrado: ${arquivo}`);
+    const informado = arquivoInformado();
+    if (informado && !fs.existsSync(informado)) console.warn(`Arquivo informado não existe (${informado}); procurando sozinho...`);
+    const arquivo = informado && fs.existsSync(informado) ? informado : localizarPlanilha();
 
-    const workbook = XLSX.readFile(arquivo, { cellDates: true });
+    const workbook = XLSX.readFile(arquivo);
     const tomo = lerAba(workbook, "Seleção_Tomográfos", TOMO, "tomo");
     const rnm = lerAba(workbook, "Seleção_Ressonância", RNM, "rnm");
     if (!tomo.length || !rnm.length) throw new Error("Nenhuma linha válida foi encontrada nas abas TOMO/RNM.");

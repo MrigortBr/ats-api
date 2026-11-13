@@ -1,0 +1,17 @@
+[
+  { "cnes": "2365243", "comboType": "COMBO OFTALMO", "deliveryDate": "11/06/2026", "sourceRow": 1 },
+  { "cnes": "2726971", "comboType": "COMBO OFTALMO", "deliveryDate": "03/08/2026", "sourceRow": 2 },
+  { "cnes": "2365146", "comboType": "COMBO CIRURGIA", "deliveryDate": "17/06/2026", "sourceRow": 3 },
+  { "cnes": "2365154", "comboType": "COMBO CIRURGIA", "deliveryDate": "05/05/2026", "sourceRow": 4 },
+  { "cnes": "4009622", "comboType": "COMBO CIRURGIA", "deliveryDate": "06/05/2026", "sourceRow": 5 },
+  { "cnes": "2726998", "comboType": "COMBO CIRURGIA", "deliveryDate": "29/04/2026", "sourceRow": 6 },
+  { "cnes": "2323451", "comboType": "COMBO CIRURGIA", "deliveryDate": "29/04/2026", "sourceRow": 7 },
+  { "cnes": "2726971", "comboType": "COMBO CIRURGIA", "deliveryDate": "28/04/2026", "sourceRow": 8 },
+  { "cnes": "9230645", "comboType": "COMBO OFTALMO", "deliveryDate": "18/08/2026", "sourceRow": 9 },
+  { "cnes": "3285391", "comboType": "COMBO OFTALMO", "deliveryDate": "25/09/2026", "sourceRow": 10 },
+  { "cnes": "2777751", "comboType": "COMBO CIRURGIA", "deliveryDate": "15/09/2026", "sourceRow": 11 },
+  { "cnes": "2777762", "comboType": "COMBO CIRURGIA", "deliveryDate": "10/09/2026", "sourceRow": 12 },
+  { "cnes": "8015899", "comboType": "COMBO CIRURGIA", "deliveryDate": "17/09/2026", "sourceRow": 13 },
+  { "cnes": "2777746", "comboType": "COMBO CIRURGIA", "deliveryDate": "17/09/2026", "sourceRow": 14 },
+  { "cnes": "5828856", "comboType": "COMBO CIRURGIA", "deliveryDate": "21/09/2026", "sourceRow": 15 }
+]

@@ -62,6 +62,19 @@ src/database/seed/
 src/database/seed/*
 !src/database/seed/combo-atualizacao-planilha.seed.ts
 !src/database/seed/tomo-rnm-atualizacao-planilha.seed.ts
+# Produção mensal consolidada do Combo (grupo 04) e seu importador idempotente.
+!src/database/seed/producao-combo-04.data.json
+!src/database/seed/producao-combo-0405.data.json
+!src/database/seed/producao-combo-0405.seed.ts
+# Snapshot independente de datas da planilha de controle (3).
+!src/database/seed/combo-entregas-planilha-3.data.json
+!src/database/seed/combo-entregas-planilha-3.seed.ts
+# Ajuste pontual das datas de entrega do PI, conforme planilha recebida.
+!src/database/seed/combo-entregas-pi.data.json
+!src/database/seed/combo-entregas-pi.seed.ts
+# Snapshot da aba Consulta_Consolidada, sem o PI (tratado separadamente).
+!src/database/seed/combo-entregas-consulta-consolidada.data.json
+!src/database/seed/combo-entregas-consulta-consolidada.seed.ts
 
 # context handoff (não versionar)
 CONTEXT.md

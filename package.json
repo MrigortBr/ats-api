@@ -27,6 +27,7 @@
     "seed:producao-tomo-rnm-mensal": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-rnm-mensal.seed.ts",
         "seed:producao-tomo-rnm": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-rnm.seed.ts",
         "seed:combo-atualizacao": "npx ts-node -r tsconfig-paths/register src/database/seed/combo-atualizacao-planilha.seed.ts",
+        "seed:rnm-pac-nova": "npx ts-node -r tsconfig-paths/register src/database/seed/rnm-pac-nova.seed.ts",
         "seed:tomo-rnm-atualizacao": "npx ts-node -r tsconfig-paths/register src/database/seed/tomo-rnm-atualizacao-planilha.seed.ts",
         "seed:producao-tomo-correcao-6": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-tomo-correcao-6-cnes.seed.ts",
         "seed:producao-corrigir-sem-entrega": "npx ts-node -r tsconfig-paths/register src/database/seed/producao-corrigir-sem-entrega.seed.ts",

@@ -40,6 +40,7 @@ import { RnmObservacaoModule } from "./modules/rnm-observacao/rnm-observacao.mod
 import { EquipamentoConvenioModule } from "./modules/equipamento-convenio/equipamento-convenio.module";
 import { UsuarioInternoModule } from "./modules/usuario-interno/usuario-interno.module";
 import { AceleradoresModule } from "./modules/aceleradores/aceleradores.module";
+import { AparelhosDecanModule } from "./modules/aparelhos-decan/aparelhos-decan.module";
 
 @Module({
     controllers: [AppController],
@@ -102,6 +103,8 @@ import { AceleradoresModule } from "./modules/aceleradores/aceleradores.module";
         UsuarioInternoModule,
         // Planilha de aceleradores lineares (antes servida sem login pelo frontend)
         AceleradoresModule,
+        // Entregas de equipamentos do DECAN + produção do relatório
+        AparelhosDecanModule,
     ],
 })
 export class AppModule {}

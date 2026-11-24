@@ -1,4 +1,4 @@
-import { LinhaBanco, canonicoDoBanco, dataParaSerial, normalizarChave, planejar, resumir } from "./combo-import.plan";
+import { LinhaBanco, canonicoDoBanco, dataParaBr, dataParaSerial, empresaIdPorPrefixo, normalizarChave, planejar, resumir } from "./combo-import.plan";
 
 const K = "ADV_0001_LASER";
 
@@ -25,8 +25,32 @@ describe("normalizadores", () => {
         expect(dataParaSerial("abc")).toBeNull();
     });
 
-    it("banco: data dd/mm/aaaa vira o mesmo serial da planilha", () => {
-        expect(canonicoDoBanco("delivery_date", "06/05/2026")).toBe("46148");
+    it("banco: data dd/mm/aaaa continua dd/mm/aaaa e serial vira dd/mm/aaaa", () => {
+        expect(canonicoDoBanco("delivery_date", "06/05/2026")).toBe("06/05/2026");
+        expect(canonicoDoBanco("delivery_date", "46148")).toBe("06/05/2026");
+    });
+
+    it("dataParaBr: serial, dd/mm/aa, ISO e inválida", () => {
+        expect(dataParaBr(46245)).toBe("11/08/2026");
+        expect(dataParaBr("6/5/26")).toBe("06/05/2026");
+        expect(dataParaBr("2026-05-06")).toBe("06/05/2026");
+        expect(dataParaBr("31/02/2026")).toBeNull();
+        expect(dataParaBr("abc")).toBeNull();
+    });
+
+    it("empresa pelo prefixo da chave, ignorando acento e caixa", () => {
+        const empresas = [
+            { id: 1, name: "Hospcom Equipamentos Hospitalares LTDA" },
+            { id: 4, name: "Advanced Industria Medica" },
+            { id: 5, name: "Bl Industria e Comercio de Maquinas e Fornos Ltda." },
+            { id: 7, name: "W M Jr - Comercio de Equipamentos Medicos LTDA" },
+        ];
+        expect(empresaIdPorPrefixo(empresas, "ADV")).toBe(4);
+        expect(empresaIdPorPrefixo(empresas, "hos")).toBe(1);
+        expect(empresaIdPorPrefixo(empresas, "BLI")).toBe(5);
+        expect(empresaIdPorPrefixo(empresas, "WMJ")).toBe(7);
+        expect(empresaIdPorPrefixo(empresas, "KSS")).toBeNull();
+        expect(empresaIdPorPrefixo(empresas, "XXX")).toBeNull();
     });
 });
 
@@ -56,6 +80,13 @@ describe("planejar", () => {
     it("valor igual não gera mudança (data em formatos diferentes)", () => {
         const p = planejar([banco({}, { delivery_date: "06/05/2026" })], [row({ "Data de Entrega Concretizada ao Destinatário": 46148 })]);
         expect(p.itens[0].acao).toBe("sem_mudanca");
+    });
+
+    it("grava data nova em dd/mm/aaaa (formato do banco), não em serial", () => {
+        const p = planejar([banco({}, { delivery_date: null })], [row({ "Data de Entrega Concretizada ao Destinatário": 46148 })]);
+        expect(p.itens[0].mudancas.find((x) => x.coluna === "delivery_date")?.para).toBe("06/05/2026");
+        const c = planejar([], [row({ "Data de Entrega Concretizada ao Destinatário": 46148 })]);
+        expect(c.itens[0].novo?.valores.delivery_date).toBe("06/05/2026");
     });
 
     it("casa chave com NBSP", () => {

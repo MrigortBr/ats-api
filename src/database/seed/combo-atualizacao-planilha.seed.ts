@@ -62,7 +62,7 @@ interface PlanilhaLinha {
 
 const H = {
     equipKey: "Chave",
-    comboCode: "Combo",
+    comboCode: "Nº",
     contract: "Contrato",
     deliveryParcel: "Parcela de Entrega",
     serialNumber: "Nº de Série do Equipamento",

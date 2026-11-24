@@ -2,21 +2,13 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { DataSource, EntityManager } from "typeorm";
 import {
     CAMPOS, Coluna, ItemPlano, LinhaBanco, Plano, ResumoCampo, Resumo,
-    planejar, resumir, resumirPorCampo,
+    empresaIdPorPrefixo, planejar, resumir, resumirPorCampo,
 } from "./combo-import.plan";
 
 const LIMITE_AMOSTRA = 200;
 
-/** Prefixo do Nº do combo -> nome da empresa em "companies". */
-const EMPRESA_POR_PREFIXO: Record<string, string> = {
-    ADV: "ADVANCED INDUSTRIA",
-    BLI: "BL INDUSTRIA",
-    HOS: "HOSPCOM",
-    IMX: "IMX INDUSTRIA",
-    KSS: "KSS COMERCIO",
-    OFT: "OFTALMOSERV COMERCIO",
-    WMJ: "W M JR - COMERCIO",
-};
+/** Prefixos do Nº do combo que identificam a empresa (o casamento com "companies" fica em empresaIdPorPrefixo). */
+const PREFIXOS_EMPRESA = ["ADV", "BLI", "HOS", "IMX", "KSS", "OFT", "WMJ"];
 
 export interface PreviewResultado {
     resumo: Resumo;
@@ -99,7 +91,7 @@ export class ComboImportService {
                 if (it.acao === "criar" && it.novo) {
                     const { equipKey, estabKey, valores } = it.novo;
                     const colunas = Object.keys(valores) as Coluna[];
-                    const prefixo = String(valores.combo_code ?? "").slice(0, 3).toUpperCase();
+                    const prefixo = String(valores.combo_code ?? equipKey).slice(0, 3).toUpperCase();
                     const companyId = empresas.get(prefixo) ?? null;
                     const nomes = ["equip_key", "estab_key", ...colunas, "company_id"];
                     const params = [equipKey, estabKey, ...colunas.map((c) => valores[c]), companyId];
@@ -135,11 +127,10 @@ export class ComboImportService {
 
     private async empresasPorPrefixo(m: EntityManager): Promise<Map<string, number>> {
         const rows: { id: number; name: string }[] = await m.query(`SELECT id, name FROM companies WHERE deleted_at IS NULL`);
-        const porNome = new Map(rows.map((r) => [r.name.trim().toUpperCase(), Number(r.id)]));
         const mapa = new Map<string, number>();
-        for (const [prefixo, nome] of Object.entries(EMPRESA_POR_PREFIXO)) {
-            const id = porNome.get(nome);
-            if (id !== undefined) mapa.set(prefixo, id);
+        for (const prefixo of PREFIXOS_EMPRESA) {
+            const id = empresaIdPorPrefixo(rows, prefixo);
+            if (id !== null) mapa.set(prefixo, id);
         }
         return mapa;
     }

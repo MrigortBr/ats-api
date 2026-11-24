@@ -28,6 +28,7 @@ type Modulo = "tomo" | "rnm";
 
 interface LinhaPlanilha {
     cnes: string;
+    uf?: string;
     cnpj?: string;
     gestao?: string;
     naturezaJuridica?: string;
@@ -104,6 +105,21 @@ function statusTomo(value: unknown): string | undefined {
     if (raw.includes("reserva") || raw.includes("espera")) return "ESPERA";
     if (raw === "novo") return "NOVO";
     return original?.toUpperCase();
+}
+
+/**
+ * "Previsão de Entrega (Etapa)" do TOMO vira o contrato no formato já usado pelo sistema
+ * ("1º Contrato", "2º Contrato", "3º Contrato?", "Em Espera"). Outros textos passam como estão.
+ */
+function contratoTomo(value: unknown): string | undefined {
+    const original = texto(value);
+    const raw = normalizar(original ?? "");
+    if (!raw) return undefined;
+    if (raw.includes("espera")) return "Em Espera";
+    if (/^1/.test(raw)) return "1º Contrato";
+    if (/^2/.test(raw)) return "2º Contrato";
+    if (/^3/.test(raw)) return "3º Contrato?";
+    return original;
 }
 
 /** Número de série do Excel -> dd/mm/aaaa (UTC, sem depender de fuso nem do formato da célula). */
@@ -221,6 +237,7 @@ function lerAba(workbook: XLSX.WorkBook, aba: string, campos: CampoSource, modul
 
     const indices = {
         cnes: col(campos.cnes)!,
+        uf: col("UF", false),
         cnpj: col(campos.cnpj),
         gestao: col(campos.gestao),
         naturezaJuridica: col(campos.naturezaJuridica),
@@ -235,18 +252,28 @@ function lerAba(workbook: XLSX.WorkBook, aba: string, campos: CampoSource, modul
         if (!codigo) return [];
         return [{
             cnes: codigo,
+            uf: indices.uf === undefined ? undefined : texto(row[indices.uf])?.toUpperCase(),
             cnpj: indices.cnpj === undefined ? undefined : texto(row[indices.cnpj]),
             gestao: indices.gestao === undefined ? undefined : gestao(row[indices.gestao]),
             naturezaJuridica: indices.naturezaJuridica === undefined ? undefined : texto(row[indices.naturezaJuridica]),
             status: indices.status === undefined ? undefined : modulo === "tomo"
                 ? statusTomo(row[indices.status])
                 : texto(row[indices.status]),
-            contract: indices.contract === undefined ? undefined : texto(row[indices.contract]),
+            contract: indices.contract === undefined ? undefined : modulo === "tomo"
+                ? contratoTomo(row[indices.contract])
+                : texto(row[indices.contract]),
             deliveryDate: indices.deliveryDate === undefined
                 ? undefined
                 : dataDaCelula(sheet, faixa.s.r + 2 + i, faixa.s.c + indices.deliveryDate, row[indices.deliveryDate]),
         }];
     });
+}
+
+/** UF cujas datas de entrega a planilha não deve alterar (decisão do gestor: PI mantém a data do sistema). */
+const UF_SEM_ATUALIZAR_ENTREGA = new Set(["PI"]);
+
+function entregaAtualizavel(item: LinhaPlanilha): string | undefined {
+    return item.uf && UF_SEM_ATUALIZAR_ENTREGA.has(item.uf) ? undefined : item.deliveryDate;
 }
 
 async function atualizar(modulo: Modulo, linhas: LinhaPlanilha[], dry: boolean): Promise<void> {
@@ -274,7 +301,7 @@ async function atualizar(modulo: Modulo, linhas: LinhaPlanilha[], dry: boolean):
                         delivery_date = COALESCE(NULLIF($4, ''), delivery_date),
                         updated_at = NOW()
                      WHERE id = $1`,
-                    [existing.id, item.status ?? "", item.contract ?? "", item.deliveryDate ?? ""],
+                    [existing.id, item.status ?? "", item.contract ?? "", entregaAtualizavel(item) ?? ""],
                 );
                 await ds.query(
                     `UPDATE hospital SET
@@ -288,12 +315,15 @@ async function atualizar(modulo: Modulo, linhas: LinhaPlanilha[], dry: boolean):
         }
     }
 
-    const mudancasData = pendentes.filter(item => item.deliveryDate && item.deliveryDate !== porCnes.get(item.cnes)!.deliveryDate);
+    const mudancasData = pendentes.filter(item => entregaAtualizavel(item) && entregaAtualizavel(item) !== porCnes.get(item.cnes)!.deliveryDate);
+    const piPreservadas = pendentes.filter(item => item.deliveryDate && !entregaAtualizavel(item) && item.deliveryDate !== porCnes.get(item.cnes)!.deliveryDate);
     console.log(`\n${modulo.toUpperCase()}`);
     console.log(`${dry ? "Seriam atualizados" : "Atualizados"}: ${pendentes.length}`);
     console.log(`Datas de entrega que mudam: ${mudancasData.length}`);
+    console.log(`Datas de entrega de UF preservada (PI) que a planilha mudaria e não foram tocadas: ${piPreservadas.length}`);
+    for (const item of piPreservadas) console.log(`  ${item.cnes} (${item.uf}): mantém ${porCnes.get(item.cnes)!.deliveryDate ?? "(vazio)"} (planilha ${item.deliveryDate})`);
     for (const item of mudancasData.slice(0, 80)) {
-        console.log(`  ${item.cnes}: ${porCnes.get(item.cnes)!.deliveryDate ?? "(vazio)"} -> ${item.deliveryDate}`);
+        console.log(`  ${item.cnes}: ${porCnes.get(item.cnes)!.deliveryDate ?? "(vazio)"} -> ${entregaAtualizavel(item)}`);
     }
     console.log(`CNES da planilha sem registro ${modulo.toUpperCase()} no banco: ${ausentes.length}`);
     if (ausentes.length) console.log(ausentes.map(item => item.cnes).join(", "));

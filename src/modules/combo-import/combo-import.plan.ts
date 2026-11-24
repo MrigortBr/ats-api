@@ -138,6 +138,42 @@ export function dataParaSerial(v: unknown): string | null {
     return null;
 }
 
+/**
+ * Data em qualquer formato aceito -> dd/mm/aaaa, que é o formato gravado em combo_consult
+ * (as telas e os seeds leem esse formato). Nulo se não reconhecida.
+ */
+export function dataParaBr(v: unknown): string | null {
+    const serial = dataParaSerial(v);
+    if (serial === null) return null;
+    const n = Number(serial);
+    if (!Number.isFinite(n) || n < 1) return null;
+    const d = new Date(Math.round((n - DIAS_ATE_1970) * MS_DIA));
+    return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+}
+
+/** Palavra inicial do nome da empresa (sem acento, minúscula) para cada prefixo da chave do combo. */
+const EMPRESA_POR_PREFIXO: Record<string, string> = {
+    ADV: "advanced",
+    BLI: "bl industria",
+    HOS: "hospcom",
+    IMX: "imx",
+    KSS: "kss",
+    OFT: "oftalmoserv",
+    WMJ: "w m jr",
+};
+
+function semAcento(s: string): string {
+    return s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** Id da empresa cujo nome começa com a palavra do prefixo (ex.: ADV -> "Advanced Industria Medica"). */
+export function empresaIdPorPrefixo(empresas: { id: number; name: string }[], prefixo: string): number | null {
+    const chave = EMPRESA_POR_PREFIXO[prefixo.toUpperCase()];
+    if (!chave) return null;
+    const achadas = empresas.filter((e) => semAcento(e.name).startsWith(chave));
+    return achadas.length === 1 ? Number(achadas[0].id) : null;
+}
+
 function paraBool(v: unknown): boolean | null | "invalido" {
     if (typeof v === "boolean") return v;
     const s = normalizarTexto(v);
@@ -190,8 +226,8 @@ export function lerLinha(raw: Record<string, unknown>): LinhaLida {
             case "texto": valor = normalizarTexto(cel); break;
             case "data": {
                 if (normalizarTexto(cel) === null) { valor = null; break; }
-                const serial = dataParaSerial(cel);
-                valor = serial === null ? "invalido" : serial;
+                const br = dataParaBr(cel);
+                valor = br === null ? "invalido" : br;
                 break;
             }
             case "bool": valor = paraBool(cel); break;
@@ -220,7 +256,7 @@ export function canonicoDoBanco(coluna: Coluna, v: unknown): Valor | null {
         case "data": {
             const s = normalizarTexto(v);
             if (s === null) return null;
-            return dataParaSerial(s) ?? s;
+            return dataParaBr(s) ?? s;
         }
         case "bool": return typeof v === "boolean" ? v : null;
         case "dinheiro": { const n = Number(v); return Number.isFinite(n) ? Math.round(n * 100) / 100 : null; }
